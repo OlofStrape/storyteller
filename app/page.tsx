@@ -119,6 +119,15 @@ export default function HomePage() {
       if (savedSeries) {
         setStorySeries(JSON.parse(savedSeries));
       }
+      
+      // Load TTS provider preference (default to elevenlabs)
+      const savedTtsProvider = localStorage.getItem("tts.provider");
+      if (savedTtsProvider) {
+        setTtsProvider(savedTtsProvider);
+      } else {
+        // Set default to elevenlabs and save it
+        localStorage.setItem("tts.provider", "elevenlabs");
+      }
     } catch {}
 
     // PWA Installation
@@ -1444,25 +1453,6 @@ export default function HomePage() {
                   <option value="onyx">Onyx (Mogen & mystisk) 🔒</option>
                 </select>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
-                  <div>
-                    <span className="small">TTS-tjänst:</span>
-                    <select 
-                      value={ttsProvider} 
-                      onChange={(e) => setTtsProvider(e.target.value)} 
-                      style={{ width: "100%", marginTop: "4px" }}
-                    >
-                      <option value="elevenlabs">ElevenLabs - Svenska röster (Premium) 👑</option>
-                      <option value="openai">OpenAI TTS HD (Premium) 🔒</option>
-                      <option value="web-speech">Web Speech API (Gratis) ⭐</option>
-                      <option value="azure">Azure Speech - Svenska röster (Premium) 🔒</option>
-                    </select>
-                    <p className="small" style={{ marginTop: "4px", color: "var(--accent-gold)" }}>
-                      {ttsProvider === 'elevenlabs' && "🌟 Ultra-realistiska svenska röster med AI"}
-                      {ttsProvider === 'azure' && "🇸🇪 Autentiska svenska neural voices"}
-                      {ttsProvider === 'openai' && "🤖 HD-kvalitet med naturlig intonation"}
-                      {ttsProvider === 'web-speech' && "🆓 Gratis systemröster"}
-                    </p>
-                  </div>
                   <div>
                     <span className="small">Hastighet: {ttsRate.toFixed(1)}x</span>
                     <input type="range" min={0.6} max={1.3} step={0.1} value={ttsRate} onChange={(e) => setTtsRate(parseFloat(e.target.value))} style={{ width: "100%" }} />

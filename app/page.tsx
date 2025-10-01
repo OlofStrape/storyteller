@@ -27,7 +27,7 @@ export default function HomePage() {
   const [interestDraft, setInterestDraft] = useState("");
   const [hasPremium, setHasPremium] = useState(true); // Auto-premium for testing
   const [ttsVoice, setTtsVoice] = useState<string>("shimmer");
-  const [ttsProvider, setTtsProvider] = useState<string>("google"); // Default to Google Cloud TTS
+  const [ttsProvider, setTtsProvider] = useState<string>("web-speech"); // Default to Web Speech API
   const [ttsRate, setTtsRate] = useState<number>(0.9);
   const [ttsPitch, setTtsPitch] = useState<number>(1.0);
   const [ttsVolume, setTtsVolume] = useState<number>(1.0);
@@ -139,9 +139,9 @@ export default function HomePage() {
         setStorySeries(JSON.parse(savedSeries));
       }
       
-      // Always use Google TTS (free & high quality)
-      setTtsProvider("google");
-      localStorage.setItem("tts.provider", "google");
+      // Always use Web Speech API (free & natural)
+      setTtsProvider("web-speech");
+      localStorage.setItem("tts.provider", "web-speech");
       
       // Load characters
       const savedCharsList = localStorage.getItem("story.characters");

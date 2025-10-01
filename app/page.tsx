@@ -47,7 +47,7 @@ export default function HomePage() {
   const [showInstallPrompt, setShowInstallPrompt] = useState<boolean>(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
-  const [showDevControls, setShowDevControls] = useState<boolean>(true); // Always show dev controls for testing
+  const [showDevControls, setShowDevControls] = useState<boolean>(false); // Dev controls hidden by default
   const [isClient, setIsClient] = useState<boolean>(false);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -1240,7 +1240,6 @@ export default function HomePage() {
               )}
             </div>
           </div>
-          <p className="small" style={{ textAlign: "center", marginTop: "12px" }}>Plus och Premium låser upp Sleep Mode med white noise, regn och vågor.</p>
         </div>
 
         {loading && (

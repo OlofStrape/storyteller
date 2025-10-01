@@ -1160,7 +1160,15 @@ export default function HomePage() {
                   Skapar saga...
                 </span>
               </span>
-            ) : storySeries ? `📖 Fortsätt "${storySeries.title}" (Kapitel ${storySeries.chapters + 1})` : "✨ Generera saga"}
+            ) : storySeries ? (
+              <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                📖 Fortsätt "{storySeries.title}" (Kapitel {storySeries.chapters + 1})
+              </span>
+            ) : (
+              <span style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
+                🏮 Tänd Drömlyktan
+              </span>
+            )}
           </button>
           <span className="badge">
             {premiumRequired ? "Premium vald" : 

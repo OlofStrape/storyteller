@@ -866,9 +866,15 @@ export default function HomePage() {
             {isDarkMode ? "🌙" : "☀️"}
           </button>
         </div>
-        <h1>Drömlyktan</h1>
-        <p className="muted">Skapa kvällens saga</p>
-        <p className="muted">Tänd Drömlyktan och gör kvällen magisk. Trygga, personliga godnattsagor – skräddarsydda efter namn, ålder och intressen. Alla features är aktiverade för testning!</p>
+        
+        <div className="header-section">
+          <div style={{ fontSize: "48px", marginBottom: "12px" }}>🏮</div>
+          <h1>Drömlyktan</h1>
+          <p className="muted" style={{ fontSize: "18px", marginBottom: "8px" }}>Skapa kvällens saga</p>
+          <p className="muted" style={{ maxWidth: "520px", margin: "0 auto" }}>
+            Tänd Drömlyktan och gör kvällen magisk. Trygga, personliga godnattsagor – skräddarsydda efter namn, ålder och intressen.
+          </p>
+        </div>
 
         {showDevControls && (
           <div style={{ 

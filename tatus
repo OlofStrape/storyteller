@@ -1,0 +1,5 @@
+[33m28511f8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Force ElevenLabs TTS provider on mount to override localStorage
+[33m941d0ff[m Remove TTS provider selector - always use ElevenLabs
+[33m67199d1[m Add back TTS provider selector with ElevenLabs as default
+[33mc7a4c0a[m Remove all premium checks during story generation for testing
+[33m08406cd[m Remove paywall check for premium TTS providers during testing

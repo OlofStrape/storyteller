@@ -1149,11 +1149,20 @@ export default function HomePage() {
               }
               setStoryTheme(theme);
             }}>
-              <option value="standard">Standard</option>
-              <option value="astrid-lindgren">I stil av Astrid Lindgren</option>
-              <option value="sven-nordqvist">I stil av Sven Nordqvist</option>
-              <option value="gunilla-bergstrom">I stil av Gunilla Bergström</option>
-              <option value="martin-widmark">I stil av Martin Widmark</option>
+              <option value="standard">Standard (Basic)</option>
+              <optgroup label="Plus & Premium">
+                <option value="aventyr">Äventyr</option>
+                <option value="rymd">Rymd</option>
+                <option value="djur">Djurens värld</option>
+                <option value="magi">Magi & fantasi</option>
+              </optgroup>
+              <optgroup label="Premium - Författarstilar">
+                <option value="astrid-lindgren">I stil av Astrid Lindgren</option>
+                <option value="sven-nordqvist">I stil av Sven Nordqvist</option>
+                <option value="gunilla-bergstrom">I stil av Gunilla Bergström</option>
+                <option value="martin-widmark">I stil av Martin Widmark</option>
+                <option value="jk-rowling">I stil av J.K. Rowling</option>
+              </optgroup>
             </select>
           </div>
         </div>

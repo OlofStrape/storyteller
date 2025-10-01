@@ -164,12 +164,20 @@ export async function POST(req: Request) {
     let themePrompt = "";
     if (storyTheme !== "standard") {
       const themeMap: Record<string, string> = {
+        // Plus & Premium themes
+        "aventyr": "Tema: Äventyr - spännande upptäcktsresor, utmaningar att lösa, modig huvudkaraktär, och en känsla av spänning och utforskning",
+        "rymd": "Tema: Rymd - rymdskepp, planeter, stjärnor, utomjordiska vänner, och fascinerande rymdäventyr",
+        "djur": "Tema: Djurens värld - vilda djur, skogen, djurvänner, naturäventyr, och djurens perspektiv",
+        "magi": "Tema: Magi & fantasi - trollkarlar, älvor, magiska föremål, förtrollning, och fantasifulla äventyr",
+        // Premium author styles
         "astrid-lindgren": "Skriv i stil av Astrid Lindgren - levande karaktärer, naturliga och vänliga dialoger, äventyrlighet i vardagen, mjuk humor, och en varm berättarröst",
         "sven-nordqvist": "Skriv i stil av Sven Nordqvist - detaljrika beskrivningar, rolig humor, lekfulla och kreativa vardagssituationer, nära vänskap mellan karaktärerna",
         "gunilla-bergstrom": "Skriv i stil av Gunilla Bergström - enkelt språk, trygga och realistiska familjesituationer, barnets perspektiv och känslor i fokus, mild humor och värme",
-        "martin-widmark": "Skriv i stil av Martin Widmark - mystik och spänning, pussel som barnet kan lösa, smart och modig huvudkaraktär, lagom takt och cliffhangers"
+        "martin-widmark": "Skriv i stil av Martin Widmark - mystik och spänning, pussel som barnet kan lösa, smart och modig huvudkaraktär, lagom takt och cliffhangers",
+        "jk-rowling": "Skriv i stil av J.K. Rowling - rik fantasivärld, magiska element, tydlig konflikt mellan gott och ont, djupa karaktärer, och detaljrik världsbyggnad med mystik och äventyr"
       };
-      themePrompt = `\n\nBERÄTTARSTIL: ${themeMap[storyTheme] || storyTheme}. Följ denna författares berättarstil genomgående.`;
+      const isAuthorStyle = ["astrid-lindgren", "sven-nordqvist", "gunilla-bergstrom", "martin-widmark", "jk-rowling"].includes(storyTheme);
+      themePrompt = `\n\n${isAuthorStyle ? 'BERÄTTARSTIL' : 'SAGOTEMA'}: ${themeMap[storyTheme] || storyTheme}. ${isAuthorStyle ? 'Följ denna författares berättarstil genomgående.' : 'Inkludera detta tema genomgående i sagan.'}`;
     }
 
     // Add story series continuation

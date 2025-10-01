@@ -754,6 +754,7 @@ export default function HomePage() {
 
   // Check premium status from cookies
   function checkPremiumStatus() {
+    if (typeof window === 'undefined') return true; // Always premium during SSR
     const cookie = document.cookie || "";
     const hasPremiumCookie = /((^|;\s*)premium=1)(;|$)/.test(cookie);
     setHasPremium(hasPremiumCookie);

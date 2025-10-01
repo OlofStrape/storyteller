@@ -63,7 +63,8 @@ export default function HomePage() {
   // Calculate daily limits based on premium tier
   const getDailyLimit = () => {
     if (!hasPremium) return 1; // Free users
-    // Get premium tier from cookie
+    // Get premium tier from cookie (SSR-safe)
+    if (typeof window === 'undefined') return 10; // Default to premium tier during SSR
     const cookie = document.cookie || "";
     const tierMatch = cookie.match(/premium_tier=([^;]+)/);
     const tier = tierMatch ? tierMatch[1] : "basic";
@@ -542,15 +543,7 @@ export default function HomePage() {
   }
 
   const startSleepMode = () => {
-    // Check if user has Plus or Premium tier
-    const cookie = document.cookie || "";
-    const tierMatch = cookie.match(/premium_tier=([^;]+)/);
-    const tier = tierMatch ? tierMatch[1] : null;
-    
-    if (!tier || (tier !== "plus" && tier !== "premium")) {
-      setShowPaywall(true);
-      return;
-    }
+    // Auto-enabled for testing (no tier check needed)
     const src = `/audio/${sleepChoice}.mp3`;
     const el = new Audio(src);
     el.loop = true;

@@ -426,13 +426,7 @@ export default function HomePage() {
     setLoading(true);
     setError("");
     
-    // Check if premium provider is selected without premium
-    if (['openai', 'azure', 'elevenlabs'].includes(ttsProvider) && !hasPremium) {
-      setShowPaywall(true);
-      setLoading(false);
-      return;
-    }
-    
+    // Premium TTS is available for testing
     try {
       if (ttsProvider === 'web-speech') {
         // Web Speech API - free and natural

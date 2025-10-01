@@ -958,7 +958,7 @@ export default function HomePage() {
           style={{ marginTop: "4px" }}
         />
 
-        <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center", display: "none" }}>
+        <div style={{ marginTop: 8, display: "none", gap: 8, alignItems: "center" }}>
           <button 
             className="button" 
             style={{ fontSize: "12px", padding: "6px 12px" }}

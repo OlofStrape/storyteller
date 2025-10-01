@@ -1139,24 +1139,34 @@ export default function HomePage() {
             </select>
           </div>
           <div>
-            <label style={{ textAlign: "center" }}>Sagotema {storyTheme !== "standard" && <span className="badge premium">Premium</span>}</label>
+            <label style={{ textAlign: "center" }}>Sagotema</label>
             <select value={storyTheme} onChange={(e) => {
               const theme = e.target.value;
+              const plusThemes = ["aventyr", "rymd", "djur", "magi"];
+              const premiumThemes = ["astrid-lindgren", "sven-nordqvist", "gunilla-bergstrom", "martin-widmark", "jk-rowling"];
+              
+              // Check if theme requires premium
               if (theme !== "standard" && !hasPremium) {
                 setShowPaywall(true);
                 setStoryTheme("standard"); // Reset to standard
                 return;
               }
+              
+              // Show lock icon if selecting premium theme
+              if (premiumThemes.includes(theme) || plusThemes.includes(theme)) {
+                showToast("🔓 Premium-tema valt!", "success");
+              }
+              
               setStoryTheme(theme);
             }}>
-              <option value="standard">Standard (Basic)</option>
-              <optgroup label="Plus & Premium">
+              <option value="standard">Standard</option>
+              <optgroup label="Teman">
                 <option value="aventyr">Äventyr</option>
                 <option value="rymd">Rymd</option>
                 <option value="djur">Djurens värld</option>
                 <option value="magi">Magi & fantasi</option>
               </optgroup>
-              <optgroup label="Premium - Författarstilar">
+              <optgroup label="Författarstilar">
                 <option value="astrid-lindgren">I stil av Astrid Lindgren</option>
                 <option value="sven-nordqvist">I stil av Sven Nordqvist</option>
                 <option value="gunilla-bergstrom">I stil av Gunilla Bergström</option>
@@ -1164,6 +1174,11 @@ export default function HomePage() {
                 <option value="jk-rowling">I stil av J.K. Rowling</option>
               </optgroup>
             </select>
+            {storyTheme !== "standard" && (
+              <span className="small" style={{ color: "var(--accent-gold)", marginTop: "4px", display: "block", textAlign: "center" }}>
+                🔒 Premium-tema aktivt
+              </span>
+            )}
           </div>
         </div>
 

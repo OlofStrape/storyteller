@@ -18,13 +18,23 @@ export async function generateGoogleTTS(
   // Parse credentials (they can be a file path or JSON string)
   let credentialsObj;
   try {
-    // Clean up the credentials string - remove any extra whitespace or newlines
-    const cleanCredentials = credentials.trim().replace(/\n/g, '').replace(/\r/g, '');
-    credentialsObj = JSON.parse(cleanCredentials);
+    // Check if it's a file path (ends with .json) or JSON string
+    if (credentials.endsWith('.json')) {
+      // Read from file
+      const fs = require('fs');
+      const path = require('path');
+      const credentialsPath = path.resolve(process.cwd(), credentials);
+      const credentialsFile = fs.readFileSync(credentialsPath, 'utf8');
+      credentialsObj = JSON.parse(credentialsFile);
+    } else {
+      // Parse as JSON string
+      const cleanCredentials = credentials.trim().replace(/\n/g, '').replace(/\r/g, '');
+      credentialsObj = JSON.parse(cleanCredentials);
+    }
   } catch (e) {
-    console.error("JSON Parse Error:", e);
-    console.error("Credentials string:", credentials.substring(0, 100) + "...");
-    throw new Error("GOOGLE_APPLICATION_CREDENTIALS must be a valid JSON string");
+    console.error("Credentials Error:", e);
+    console.error("Credentials value:", credentials.substring(0, 100) + "...");
+    throw new Error("GOOGLE_APPLICATION_CREDENTIALS must be a valid JSON file path or JSON string");
   }
   
   // Create auth client

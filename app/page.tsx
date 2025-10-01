@@ -964,14 +964,13 @@ export default function HomePage() {
           </p>
         )}
         
-        <label style={{ marginTop: "12px" }}>Ålder</label>
-        <input
-          type="number"
-          value={age}
-          onChange={(e) => setAge(parseInt(e.target.value) || 3)}
-          min={3}
-          max={13}
-          style={{ marginTop: "4px" }}
+        <label>Ålder ({age} år)</label>
+        <input 
+          type="range" 
+          min={3} 
+          max={13} 
+          value={age} 
+          onChange={(e) => setAge(parseInt(e.target.value))} 
         />
 
         <div style={{ marginTop: 8, display: "none", gap: 8, alignItems: "center" }}>
@@ -1059,33 +1058,24 @@ export default function HomePage() {
           </div>
         )}
 
-        <div className="row">
-          <div>
-            <label>Ålder: {age} år</label>
-            <input type="range" min={3} max={13} value={age} onChange={(e) => setAge(parseInt(e.target.value))} />
-          </div>
-          <div>
-            <label>Längd (min) {lengthMin > 3 && <span className="badge">🔒 Premium</span>}</label>
-            <input
-              type="range"
-              min={3}
-              max={15}
-              step={1}
-              value={lengthMin}
-              onChange={(e) => {
-                const v = parseInt(e.target.value);
-                if (v > 3 && !hasPremium) {
-                  setShowPaywall(true);
-                  // snap back to 3
-                  setLengthMin(3 as any);
-                } else {
-                  setLengthMin(v as any);
-                }
-              }}
-            />
-            <div className="small">Val: {lengthMin} min (4+ är Premium)</div>
-          </div>
-        </div>
+        <label>Längd ({lengthMin} min) {lengthMin > 3 && <span className="badge">🔒 Premium</span>}</label>
+        <input
+          type="range"
+          min={3}
+          max={15}
+          step={1}
+          value={lengthMin}
+          onChange={(e) => {
+            const v = parseInt(e.target.value);
+            if (v > 3 && !hasPremium) {
+              setShowPaywall(true);
+              // snap back to 3
+              setLengthMin(3 as any);
+            } else {
+              setLengthMin(v as any);
+            }
+          }}
+        />
 
         <label>Intressen/tema {interestsTokens.accepted.length > 0 && <span className="small" style={{ color: "var(--text-secondary)" }}>({interestsTokens.accepted.length}/4)</span>}</label>
         <div className="chip-input">

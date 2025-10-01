@@ -964,7 +964,7 @@ export default function HomePage() {
           </p>
         )}
         
-        <div className="row">
+        <div className="row" style={{ marginTop: "24px" }}>
           <div>
             <label>Ålder ({age} år)</label>
             <input 

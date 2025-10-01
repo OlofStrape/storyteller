@@ -62,17 +62,17 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "ElevenLabs API not configured. Please add ELEVENLABS_API_KEY to environment variables." }, { status: 501 });
       }
       
-      // Map OpenAI voices to ElevenLabs voices (best for storytelling)
+      // Map OpenAI voices to ElevenLabs voices (Swedish voices)
       const elevenLabsVoiceMap: Record<string, string> = {
-        "shimmer": "XrExE9yKIg1WjnnlVkGX", // Matilda (female, warm, nurturing) - Best for kids
-        "nova": "EXAVITQu4vr4xnSDxMaL",    // Bella (female, warm, soothing)
-        "echo": "pNInz6obpgDQGcFmaJgB",    // Adam (male, natural, warm)
-        "alloy": "XrExE9yKIg1WjnnlVkGX",   // Default to Matilda
-        "fable": "VR6AewLTigWG4xSOukaG",   // Arnold (male, deep, storyteller)
-        "onyx": "VR6AewLTigWG4xSOukaG"     // Arnold (male, deep)
+        "shimmer": "4Ct5uMEndw4cJ7q0Jx0l", // Swedish voice 1 - Soft & warm
+        "nova": "kkwvaJeTPw4KK0sBdyvD",    // Swedish voice 2 - Young & gentle
+        "echo": "aSLKtNoVBZlxQEMsnGL2",    // Swedish voice 3 - Natural & calm
+        "alloy": "4Ct5uMEndw4cJ7q0Jx0l",   // Default to voice 1
+        "fable": "aSLKtNoVBZlxQEMsnGL2",   // Natural storytelling
+        "onyx": "aSLKtNoVBZlxQEMsnGL2"     // Deep & soothing
       };
       
-      const elevenLabsVoice = elevenLabsVoiceMap[voice] || "XrExE9yKIg1WjnnlVkGX";
+      const elevenLabsVoice = elevenLabsVoiceMap[voice] || "4Ct5uMEndw4cJ7q0Jx0l";
       
       try {
         buffer = await generateElevenLabsSpeech(processedText, elevenLabsVoice, elevenLabsConfig);

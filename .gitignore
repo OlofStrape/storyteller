@@ -64,3 +64,5 @@ pids
 
 # Optional eslint cache
 .eslintcache
+# Google Cloud Service Account credentials
+dromlyktan-*.json

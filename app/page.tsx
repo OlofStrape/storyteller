@@ -966,7 +966,7 @@ export default function HomePage() {
         
         <div className="row" style={{ marginTop: "24px" }}>
           <div>
-            <label>Ålder ({age} år)</label>
+            <label style={{ textAlign: "center" }}>Ålder ({age} år)</label>
             <input 
               type="range" 
               min={3} 
@@ -976,7 +976,7 @@ export default function HomePage() {
             />
           </div>
           <div>
-            <label>Längd ({lengthMin} min) {lengthMin > 3 && <span className="badge">🔒 Premium</span>}</label>
+            <label style={{ textAlign: "center" }}>Längd ({lengthMin} min) {lengthMin > 3 && <span className="badge">🔒 Premium</span>}</label>
             <input
               type="range"
               min={3}
@@ -1112,7 +1112,7 @@ export default function HomePage() {
 
         <div className="row" style={{ marginTop: "28px" }}>
           <div>
-            <label>Tonalitet</label>
+            <label style={{ textAlign: "center" }}>Tonalitet</label>
             <select value={tone} onChange={(e) => setTone(e.target.value)}>
               <option value="mysig">Mysig</option>
               <option value="magisk">Magisk</option>
@@ -1121,7 +1121,7 @@ export default function HomePage() {
             </select>
           </div>
           <div>
-            <label>Sagotema {storyTheme !== "standard" && <span className="badge">🔒 Premium</span>}</label>
+            <label style={{ textAlign: "center" }}>Sagotema {storyTheme !== "standard" && <span className="badge">🔒 Premium</span>}</label>
             <select value={storyTheme} onChange={(e) => {
               const theme = e.target.value;
               if (theme !== "standard" && !hasPremium) {
@@ -1169,8 +1169,9 @@ export default function HomePage() {
                 📖 Fortsätt "{storySeries.title}" (Kapitel {storySeries.chapters + 1})
               </span>
             ) : (
-              <span style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
-                🏮 Tänd Drömlyktan
+              <span style={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "center" }}>
+                <img src="/lantern.png" alt="" style={{ width: "24px", height: "24px", filter: "drop-shadow(0 2px 8px rgba(255,223,138,0.6))" }} />
+                Tänd Drömlyktan
               </span>
             )}
           </button>
@@ -1210,40 +1211,23 @@ export default function HomePage() {
               </select>
             </div>
             <div>
-              <select value={sleepMinutes} onChange={(e) => {
-                const prev = sleepMinutes;
-                setShowPaywall(true);
-                setSleepMinutes(prev);
-              }}>
-                <option value={10}>10 min</option>
-                <option value={20}>20 min</option>
-                <option value={30}>30 min</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize: "14px", marginBottom: "6px" }}>Sleep Timer (Premium)</label>
+              <label style={{ textAlign: "center", fontSize: "14px", marginBottom: "6px" }}>Sleep Timer</label>
               <select 
                 value={sleepTimer} 
-                onChange={(e) => {
-                  if (!hasPremium) {
-                    setShowPaywall(true);
-                    return;
-                  }
-                  setSleepTimer(Number(e.target.value));
-                }}
+                onChange={(e) => setSleepTimer(Number(e.target.value))}
               >
                 <option value={0}>Av</option>
                 <option value={10}>10 min</option>
                 <option value={20}>20 min</option>
                 <option value={30}>30 min</option>
                 <option value={45}>45 min</option>
-                <option value={60}>1 timme</option>
-                <option value={90}>1.5 timmar</option>
-                <option value={120}>2 timmar</option>
+                <option value={60}>60 min</option>
+                <option value={90}>90 min</option>
+                <option value={120}>120 min</option>
               </select>
               {sleepTimerActive && (
-                <span className="small" style={{ color: "var(--accent-gold)", display: "block", marginTop: "4px" }}>
-                  ⏰ Sleep timer aktiv: {sleepTimer} min
+                <span className="small" style={{ color: "var(--accent-gold)", display: "block", marginTop: "4px", textAlign: "center" }}>
+                  ⏰ Timer aktiv: {sleepTimer} min
                 </span>
               )}
             </div>

@@ -964,14 +964,37 @@ export default function HomePage() {
           </p>
         )}
         
-        <label>Ålder ({age} år)</label>
-        <input 
-          type="range" 
-          min={3} 
-          max={13} 
-          value={age} 
-          onChange={(e) => setAge(parseInt(e.target.value))} 
-        />
+        <div className="row">
+          <div>
+            <label>Ålder ({age} år)</label>
+            <input 
+              type="range" 
+              min={3} 
+              max={13} 
+              value={age} 
+              onChange={(e) => setAge(parseInt(e.target.value))} 
+            />
+          </div>
+          <div>
+            <label>Längd ({lengthMin} min) {lengthMin > 3 && <span className="badge">🔒 Premium</span>}</label>
+            <input
+              type="range"
+              min={3}
+              max={15}
+              step={1}
+              value={lengthMin}
+              onChange={(e) => {
+                const v = parseInt(e.target.value);
+                if (v > 3 && !hasPremium) {
+                  setShowPaywall(true);
+                  setLengthMin(3 as any);
+                } else {
+                  setLengthMin(v as any);
+                }
+              }}
+            />
+          </div>
+        </div>
 
         <div style={{ marginTop: 8, display: "none", gap: 8, alignItems: "center" }}>
           <button 
@@ -1058,26 +1081,7 @@ export default function HomePage() {
           </div>
         )}
 
-        <label>Längd ({lengthMin} min) {lengthMin > 3 && <span className="badge">🔒 Premium</span>}</label>
-        <input
-          type="range"
-          min={3}
-          max={15}
-          step={1}
-          value={lengthMin}
-          onChange={(e) => {
-            const v = parseInt(e.target.value);
-            if (v > 3 && !hasPremium) {
-              setShowPaywall(true);
-              // snap back to 3
-              setLengthMin(3 as any);
-            } else {
-              setLengthMin(v as any);
-            }
-          }}
-        />
-
-        <label>Intressen/tema {interestsTokens.accepted.length > 0 && <span className="small" style={{ color: "var(--text-secondary)" }}>({interestsTokens.accepted.length}/4)</span>}</label>
+        <label style={{ marginTop: "28px" }}>Intressen/tema {interestsTokens.accepted.length > 0 && <span className="small" style={{ color: "var(--text-secondary)" }}>({interestsTokens.accepted.length}/4)</span>}</label>
         <div className="chip-input">
           {interestsTokens.accepted.map((t) => (
             <span key={t.value} className={`chip ${t.correctedFrom ? "corrected" : ""}`}>
@@ -1106,7 +1110,7 @@ export default function HomePage() {
         )}
         
 
-        <div className="row">
+        <div className="row" style={{ marginTop: "28px" }}>
           <div>
             <label>Tonalitet</label>
             <select value={tone} onChange={(e) => setTone(e.target.value)}>

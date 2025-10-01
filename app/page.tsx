@@ -319,18 +319,7 @@ export default function HomePage() {
     let progressInterval: NodeJS.Timeout | null = null;
     
     try {
-      // Check premium status before generating
-      const isPremium = checkPremiumStatus();
-      
-      if (premiumRequired && !isPremium) {
-        setShowPaywall(true);
-        return;
-      }
-      if (isOverDailyLimit && !isPremium) {
-        setError(`Du har nått din dagliga gräns (${getDailyLimit()} sagor). Uppgradera till Premium för fler sagor!`);
-        setShowPaywall(true);
-        return;
-      }
+      // Auto-premium for testing - skip all checks
       setLoading(true);
       setGenerationProgress(0);
       setAudioUrl("");

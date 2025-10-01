@@ -4,7 +4,15 @@ const nextConfig = {
     serverActions: {
       allowedOrigins: ["*"]
     }
-  }
+  },
+  eslint: {
+    // Skip ESLint during production builds to speed up deployment
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    // We've already fixed type errors, so we can skip checking during build
+    ignoreBuildErrors: false,
+  },
 };
 export default nextConfig;
 

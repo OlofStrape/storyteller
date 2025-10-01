@@ -1143,7 +1143,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="controls" style={{ justifyContent: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
           <button 
             className="button" 
             onClick={generateStory} 
@@ -1180,31 +1180,33 @@ export default function HomePage() {
               </span>
             )}
           </button>
-          <span className="badge">
-            {premiumRequired ? "Premium vald" : 
-             isOverDailyLimit ? "Gräns nådd" : 
-             `Gratis (${dailyUsage}/${getDailyLimit()} idag)`}
-          </span>
-          {storySeries && (
-            <button 
-              className="button" 
-              style={{ fontSize: "12px", padding: "6px 12px", background: "#ff6b6b" }}
-              onClick={() => {
-                setStorySeries(null);
-                try {
-                  localStorage.removeItem("story.series");
-                } catch {}
-                showToast("📖 Kapitel-serie avslutad", "info");
-              }}
-            >
-              🛑 Avsluta serie
-            </button>
-          )}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+            <span className="badge">
+              {premiumRequired ? "Premium vald" : 
+               isOverDailyLimit ? "Gräns nådd" : 
+               `Gratis (${dailyUsage}/${getDailyLimit()} idag)`}
+            </span>
+            {storySeries && (
+              <button 
+                className="button" 
+                style={{ fontSize: "12px", padding: "6px 12px", background: "#ff6b6b" }}
+                onClick={() => {
+                  setStorySeries(null);
+                  try {
+                    localStorage.removeItem("story.series");
+                  } catch {}
+                  showToast("📖 Kapitel-serie avslutad", "info");
+                }}
+              >
+                🛑 Avsluta serie
+              </button>
+            )}
+          </div>
         </div>
 
         <hr />
         <div>
-          <label>Sleep Mode (efter sagan)</label>
+          <label style={{ textAlign: "center" }}>Sleep Mode (efter sagan)</label>
           <div className="row">
             <div>
               <label style={{ textAlign: "center", fontSize: "14px", marginBottom: "6px" }}>Ljudtyp</label>
@@ -1238,23 +1240,7 @@ export default function HomePage() {
               )}
             </div>
           </div>
-          <div className="controls">
-            <button className="button" onClick={startSleepMode}>Starta Sleep Mode</button>
-            <button className="button" onClick={stopAll}>Stoppa allt</button>
-          </div>
-          <div style={{ marginTop: "12px" }}>
-            <label style={{ fontSize: "14px", marginBottom: "6px" }}>Volym: {Math.round(sleepVolume * 100)}%</label>
-            <input 
-              type="range" 
-              min={0} 
-              max={1} 
-              step={0.05} 
-              value={sleepVolume} 
-              onChange={(e) => setSleepVolume(parseFloat(e.target.value))}
-              style={{ marginTop: "4px" }}
-            />
-          </div>
-          <p className="small">Plus och Premium låser upp Sleep Mode med white noise, regn och vågor.</p>
+          <p className="small" style={{ textAlign: "center", marginTop: "12px" }}>Plus och Premium låser upp Sleep Mode med white noise, regn och vågor.</p>
         </div>
 
         {loading && (

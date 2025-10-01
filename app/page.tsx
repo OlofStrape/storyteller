@@ -23,9 +23,9 @@ export default function HomePage() {
   const [showSaveCharacter, setShowSaveCharacter] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [interestDraft, setInterestDraft] = useState("");
-  const [hasPremium, setHasPremium] = useState(false);
+  const [hasPremium, setHasPremium] = useState(true); // Auto-premium for testing
   const [ttsVoice, setTtsVoice] = useState<string>("shimmer");
-  const [ttsProvider, setTtsProvider] = useState<string>("web-speech");
+  const [ttsProvider, setTtsProvider] = useState<string>("elevenlabs"); // Default to ElevenLabs for testing
   const [ttsRate, setTtsRate] = useState<number>(0.9);
   const [ttsPitch, setTtsPitch] = useState<number>(1.0);
   const [ttsVolume, setTtsVolume] = useState<number>(1.0);
@@ -836,13 +836,6 @@ export default function HomePage() {
                 🔔 Notifikationer
               </button>
             )}
-            <button
-              onClick={() => setShowDevControls(!showDevControls)}
-              className="button"
-              style={{ fontSize: "12px", padding: "4px 8px", background: "rgba(255,255,255,0.1)" }}
-            >
-              🛠️ Dev
-            </button>
           </div>
           <button 
             onClick={toggleTheme}
@@ -861,86 +854,7 @@ export default function HomePage() {
         </div>
         <h1>Drömlyktan</h1>
         <p className="muted">Skapa kvällens saga</p>
-        <p className="muted">Tänd Drömlyktan och gör kvällen magisk. Trygga, personliga godnattsagor – skräddarsydda efter namn, ålder och intressen. Prova gratis (3 min), lås upp längre sagor och rogivande Sleep Mode när ni vill.</p>
-
-        {showDevControls && (
-          <div style={{ 
-            background: "rgba(255,255,255,0.05)", 
-            border: "1px solid rgba(255,255,255,0.1)", 
-            borderRadius: "8px", 
-            padding: "12px", 
-            marginBottom: "16px" 
-          }}>
-            <h3 style={{ fontSize: "14px", margin: "0 0 8px", color: "var(--accent-gold)" }}>🛠️ Developer Controls</h3>
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              {!hasPremium ? (
-                <button onClick={activateDeveloperPremium} className="button" style={{ fontSize: "12px", padding: "4px 8px" }}>
-                  🚀 Aktivera Premium
-                </button>
-              ) : (
-                <button onClick={deactivateDeveloperPremium} className="button" style={{ fontSize: "12px", padding: "4px 8px" }}>
-                  🔒 Avaktivera Premium
-                </button>
-              )}
-              <button onClick={resetDailyUsage} className="button" style={{ fontSize: "12px", padding: "4px 8px" }}>
-                📊 Reset Usage
-              </button>
-              <button onClick={checkPremiumStatus} className="button" style={{ fontSize: "12px", padding: "4px 8px" }}>
-                🔄 Refresh Status
-              </button>
-              <button onClick={() => {
-                const isPremium = checkPremiumStatus();
-                showToast(`Premium Status: ${isPremium ? "✅ Aktiverat" : "❌ Inaktiverat"}`, isPremium ? "success" : "error");
-              }} className="button" style={{ fontSize: "12px", padding: "4px 8px" }}>
-                🧪 Test Status
-              </button>
-              <button onClick={() => {
-                showToast(`Mode: ${mode} | Premium: ${hasPremium}`, "info");
-              }} className="button" style={{ fontSize: "12px", padding: "4px 8px" }}>
-                🔍 Debug Mode
-              </button>
-              <button onClick={() => {
-                setMode("openai");
-                showToast("🤖 Tvingad till OpenAI mode", "success");
-              }} className="button" style={{ fontSize: "12px", padding: "4px 8px" }}>
-                🤖 Force OpenAI
-              </button>
-              <button onClick={async () => {
-                try {
-                  const res = await fetch("/api/story", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      name: "Test",
-                      age: 5,
-                      interests: ["test"],
-                      tone: "mysig",
-                      lengthMin: 3,
-                      mode: "openai"
-                    })
-                  });
-                  const data = await res.json();
-                  showToast(`API Test: ${data.story ? "Success" : "Failed"}`, data.story ? "success" : "error");
-                } catch (error) {
-                  showToast("API Test Failed", "error");
-                }
-              }} className="button" style={{ fontSize: "12px", padding: "4px 8px" }}>
-                🧪 Test API
-              </button>
-              <button onClick={clearAllData} className="button" style={{ fontSize: "12px", padding: "4px 8px", background: "rgba(255,100,100,0.2)" }}>
-                🗑️ Clear Data
-              </button>
-            </div>
-            <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "8px" }}>
-              Status: {hasPremium ? "✅ Premium" : "❌ Free"} | Mode: {mode === "openai" ? "🤖 OpenAI" : "🏠 Local"} | Usage: {dailyUsage}/{getDailyLimit()} | Stories: {history.length}
-            </div>
-            {isClient && (
-              <div style={{ fontSize: "10px", color: "var(--text-secondary)", marginTop: "4px", fontFamily: "monospace" }}>
-                Cookies: {document.cookie || "Inga cookies"}
-              </div>
-            )}
-          </div>
-        )}
+        <p className="muted">Tänd Drömlyktan och gör kvällen magisk. Trygga, personliga godnattsagor – skräddarsydda efter namn, ålder och intressen. Alla features är aktiverade för testning!</p>
 
         <label>Huvudkaraktär {savedCharacters.length > 0 && <span className="badge">💾 {savedCharacters.length} sparad{savedCharacters.length > 1 ? 'e' : ''}</span>}</label>
         <select value={selectedCharacter} onChange={(e) => {
@@ -1187,25 +1101,14 @@ export default function HomePage() {
               🛑 Avsluta serie
             </button>
           )}
-          <select value={mode} onChange={(e) => setMode(e.target.value as any)}>
-            <option value="local">Lokal (gratis test)</option>
-            <option value="openai">OpenAI (produktion)</option>
-          </select>
-          <span className="small" style={{ color: mode === "openai" ? "var(--accent-gold)" : "var(--text-secondary)" }}>
-            {mode === "openai" ? "🤖 OpenAI aktiv" : "🏠 Lokal aktiv"}
-          </span>
         </div>
 
         <hr />
         <div>
-          <label>Sleep Mode (efter sagan) <span className="badge">🔒 Premium</span></label>
+          <label>Sleep Mode (efter sagan)</label>
           <div className="row">
             <div>
-              <select value={sleepChoice} onChange={(e) => {
-                const prev = sleepChoice;
-                setShowPaywall(true);
-                setSleepChoice(prev);
-              }}>
+              <select value={sleepChoice} onChange={(e) => setSleepChoice(e.target.value)}>
                 <option value="white-noise">White noise</option>
                 <option value="rain">Regn</option>
                 <option value="waves">Vågor</option>
@@ -1525,33 +1428,6 @@ export default function HomePage() {
                   <option value="onyx">Onyx (Mogen & mystisk) 🔒</option>
                 </select>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
-                  <div>
-                    <span className="small">TTS-tjänst:</span>
-                    <select 
-                      value={ttsProvider} 
-                      onChange={(e) => {
-                        const newProvider = e.target.value;
-                        if (['openai', 'azure', 'elevenlabs'].includes(newProvider) && !hasPremium) {
-                          setShowPaywall(true);
-                          return;
-                        }
-                        setTtsProvider(newProvider);
-                      }} 
-                      style={{ width: "100%", marginTop: "4px" }}
-                    >
-                      <option value="web-speech">Web Speech API (Gratis) ⭐</option>
-                      <option value="openai">OpenAI TTS HD (Premium) 🔒</option>
-                      <option value="azure">Azure Speech - Svenska röster (Premium) 🔒</option>
-                      <option value="elevenlabs">ElevenLabs - Bästa kvaliteten (Premium) 👑</option>
-                    </select>
-                    {ttsProvider !== 'web-speech' && (
-                      <p className="small" style={{ marginTop: "4px", color: "var(--accent-gold)" }}>
-                        {ttsProvider === 'elevenlabs' && "🌟 Ultra-realistiska röster med AI"}
-                        {ttsProvider === 'azure' && "🇸🇪 Autentiska svenska röster"}
-                        {ttsProvider === 'openai' && "🤖 HD-kvalitet med naturlig intonation"}
-                      </p>
-                    )}
-                  </div>
                   <div>
                     <span className="small">Hastighet: {ttsRate.toFixed(1)}x</span>
                     <input type="range" min={0.6} max={1.3} step={0.1} value={ttsRate} onChange={(e) => setTtsRate(parseFloat(e.target.value))} style={{ width: "100%" }} />

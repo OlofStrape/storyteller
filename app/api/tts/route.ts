@@ -93,7 +93,17 @@ export async function POST(req: Request) {
     return new NextResponse(buffer, { headers });
   } catch (e: any) {
     console.error("TTS Error:", e);
-    return NextResponse.json({ error: e?.message || "TTS generation failed" }, { status: 500 });
+    console.error("TTS Error Details:", {
+      provider,
+      voice,
+      rate,
+      message: e?.message,
+      stack: e?.stack
+    });
+    return NextResponse.json({ 
+      error: e?.message || "TTS generation failed",
+      details: process.env.NODE_ENV === 'development' ? e?.stack : undefined
+    }, { status: 500 });
   }
 }
 

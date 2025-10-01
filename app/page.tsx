@@ -492,7 +492,11 @@ export default function HomePage() {
           })
         });
         
-        if (!res.ok) throw new Error("TTS misslyckades");
+        if (!res.ok) {
+          const errorData = await res.json();
+          console.error("TTS API Error:", errorData);
+          throw new Error(errorData.error || "TTS misslyckades");
+        }
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
@@ -512,9 +516,10 @@ export default function HomePage() {
         };
         showToast(`Använder ${providerNames[ttsProvider as keyof typeof providerNames]}`, "success");
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("TTS Error:", e);
-      setError(`TTS misslyckades (${ttsProvider}). Prova Web Speech API istället.`);
+      const errorMessage = e?.message || e?.toString() || "Unknown error";
+      setError(`TTS misslyckades (${ttsProvider}): ${errorMessage}`);
       
       // Fallback to Web Speech API
       if (ttsProvider !== 'web-speech' && 'speechSynthesis' in window) {

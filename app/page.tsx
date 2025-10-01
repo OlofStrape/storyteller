@@ -1401,15 +1401,12 @@ export default function HomePage() {
                         showToast("📖 Utvecklarverktyg är inte tillåtet för Premium-innehåll", "info");
                       }
                     }}
-                    style={{ 
+                    style={{
                       userSelect: "none",
                       WebkitUserSelect: "none",
                       MozUserSelect: "none",
-                      msUserSelect: "none",
-                      WebkitTouchCallout: "none",
-                      WebkitUserDrag: "none",
-                      KhtmlUserSelect: "none"
-                    }}
+                      msUserSelect: "none"
+                    } as React.CSSProperties}
                   />
                   <div style={{
                     position: "absolute",

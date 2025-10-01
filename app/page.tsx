@@ -868,10 +868,20 @@ export default function HomePage() {
         </div>
         
         <div className="header-section">
-          <div style={{ fontSize: "48px", marginBottom: "12px" }}>🏮</div>
+          <img 
+            src="/lantern.png" 
+            alt="Drömlyktan" 
+            style={{ 
+              width: "80px", 
+              height: "80px", 
+              marginBottom: "16px",
+              filter: "drop-shadow(0 8px 24px rgba(255,223,138,0.4))",
+              animation: "pulse 4s ease-in-out infinite"
+            }} 
+          />
           <h1>Drömlyktan</h1>
-          <p className="muted" style={{ fontSize: "18px", marginBottom: "8px" }}>Skapa kvällens saga</p>
-          <p className="muted" style={{ maxWidth: "520px", margin: "0 auto" }}>
+          <p className="muted" style={{ fontSize: "18px", marginBottom: "8px", fontWeight: "500" }}>Skapa kvällens saga</p>
+          <p className="muted" style={{ maxWidth: "520px", margin: "0 auto", fontSize: "15px" }}>
             Tänd Drömlyktan och gör kvällen magisk. Trygga, personliga godnattsagor – skräddarsydda efter namn, ålder och intressen.
           </p>
         </div>

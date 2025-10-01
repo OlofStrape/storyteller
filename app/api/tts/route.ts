@@ -83,7 +83,7 @@ export async function POST(req: Request) {
       }
     } else if (provider === "google") {
       // Google Cloud Text-to-Speech - Best Swedish voices!
-      if (!process.env.GOOGLE_TTS_API_KEY) {
+      if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
         return NextResponse.json({ error: "Google TTS not configured" }, { status: 501 });
       }
       

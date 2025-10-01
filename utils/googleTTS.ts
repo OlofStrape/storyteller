@@ -1,15 +1,39 @@
 // Google Cloud Text-to-Speech integration
 // https://cloud.google.com/text-to-speech/docs/reference/rest/v1/text/synthesize
 
+import { GoogleAuth } from 'google-auth-library';
+
 export async function generateGoogleTTS(
   text: string,
   voice: string = "sv-SE-Wavenet-A",
   rate: number = 1.0
 ): Promise<ArrayBuffer> {
-  const apiKey = process.env.GOOGLE_TTS_API_KEY;
+  // Check for service account credentials
+  const credentials = process.env.GOOGLE_APPLICATION_CREDENTIALS;
   
-  if (!apiKey) {
-    throw new Error("GOOGLE_TTS_API_KEY is not configured");
+  if (!credentials) {
+    throw new Error("GOOGLE_APPLICATION_CREDENTIALS is not configured");
+  }
+  
+  // Parse credentials (they can be a file path or JSON string)
+  let credentialsObj;
+  try {
+    credentialsObj = JSON.parse(credentials);
+  } catch (e) {
+    throw new Error("GOOGLE_APPLICATION_CREDENTIALS must be a valid JSON string");
+  }
+  
+  // Create auth client
+  const auth = new GoogleAuth({
+    credentials: credentialsObj,
+    scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+  });
+  
+  const client = await auth.getClient();
+  const accessToken = await client.getAccessToken();
+  
+  if (!accessToken.token) {
+    throw new Error("Failed to get access token from Google");
   }
 
   // Map common voice names to Google voices
@@ -53,12 +77,13 @@ export async function generateGoogleTTS(
     }
   };
 
-  const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
+  const url = `https://texttospeech.googleapis.com/v1/text:synthesize`;
 
   const response = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "Authorization": `Bearer ${accessToken.token}`,
     },
     body: JSON.stringify(requestBody),
   });

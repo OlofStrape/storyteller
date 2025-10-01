@@ -1139,24 +1139,21 @@ export default function HomePage() {
             </select>
           </div>
           <div>
-            <label style={{ textAlign: "center" }}>Sagotema {storyTheme !== "standard" && <span className="badge">🔒 Premium</span>}</label>
+            <label style={{ textAlign: "center" }}>Sagotema {storyTheme !== "standard" && <span className="badge premium">Premium</span>}</label>
             <select value={storyTheme} onChange={(e) => {
               const theme = e.target.value;
               if (theme !== "standard" && !hasPremium) {
                 setShowPaywall(true);
+                setStoryTheme("standard"); // Reset to standard
                 return;
               }
               setStoryTheme(theme);
             }}>
-              <option value="standard">Standard (Alltid tillgängligt)</option>
-              <option value="magisk">Magisk äventyr ✨</option>
-              <option value="djur">Djurens värld 🐾</option>
-              <option value="prinsessa">Prinsessor & riddare 👑</option>
-              <option value="rymden">Rymdäventyr 🚀</option>
-              <option value="natur">Natur & skog 🌲</option>
-              <option value="mystik">Mystik & gåtor 🔮</option>
-              <option value="äventyr">Äventyr & utforskning 🗺️</option>
-              <option value="vänskap">Vänskap & gemenskap 🤝</option>
+              <option value="standard">Standard</option>
+              <option value="astrid-lindgren">I stil av Astrid Lindgren</option>
+              <option value="sven-nordqvist">I stil av Sven Nordqvist</option>
+              <option value="gunilla-bergstrom">I stil av Gunilla Bergström</option>
+              <option value="martin-widmark">I stil av Martin Widmark</option>
             </select>
           </div>
         </div>

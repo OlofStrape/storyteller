@@ -164,16 +164,12 @@ export async function POST(req: Request) {
     let themePrompt = "";
     if (storyTheme !== "standard") {
       const themeMap: Record<string, string> = {
-        magisk: "Magisk-tema med trollkarlar, älvor och förtrollning",
-        djur: "Djur-tema med vilda djur, skogen och natur",
-        prinsessa: "Prinsessor & riddare-tema med slott, drakar och äventyr",
-        rymden: "Rymdäventyr-tema med planeter, rymdskepp och utomjordingar",
-        natur: "Natur & skog-tema med träd, djur och utomhusäventyr",
-        mystik: "Mystik & gåtor-tema med hemligheter, pussel och mysterier",
-        äventyr: "Äventyr & utforskning-tema med resor, upptäckter och utmaningar",
-        vänskap: "Vänskap & gemenskap-tema med vänner, samarbete och gemenskap"
+        "astrid-lindgren": "Skriv i stil av Astrid Lindgren - levande karaktärer, naturliga och vänliga dialoger, äventyrlighet i vardagen, mjuk humor, och en varm berättarröst",
+        "sven-nordqvist": "Skriv i stil av Sven Nordqvist - detaljrika beskrivningar, rolig humor, lekfulla och kreativa vardagssituationer, nära vänskap mellan karaktärerna",
+        "gunilla-bergstrom": "Skriv i stil av Gunilla Bergström - enkelt språk, trygga och realistiska familjesituationer, barnets perspektiv och känslor i fokus, mild humor och värme",
+        "martin-widmark": "Skriv i stil av Martin Widmark - mystik och spänning, pussel som barnet kan lösa, smart och modig huvudkaraktär, lagom takt och cliffhangers"
       };
-      themePrompt = `\n\nSAGOTEMA: ${themeMap[storyTheme] || storyTheme}. Inkludera detta tema genomgående i sagan.`;
+      themePrompt = `\n\nBERÄTTARSTIL: ${themeMap[storyTheme] || storyTheme}. Följ denna författares berättarstil genomgående.`;
     }
 
     // Add story series continuation

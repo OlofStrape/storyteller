@@ -27,7 +27,7 @@ export default function HomePage() {
   const [interestDraft, setInterestDraft] = useState("");
   const [hasPremium, setHasPremium] = useState(true); // Auto-premium for testing
   const [ttsVoice, setTtsVoice] = useState<string>("shimmer");
-  const [ttsProvider, setTtsProvider] = useState<string>("elevenlabs"); // Default to ElevenLabs for testing
+  const [ttsProvider, setTtsProvider] = useState<string>("google"); // Default to Google Cloud TTS
   const [ttsRate, setTtsRate] = useState<number>(0.9);
   const [ttsPitch, setTtsPitch] = useState<number>(1.0);
   const [ttsVolume, setTtsVolume] = useState<number>(1.0);
@@ -139,9 +139,9 @@ export default function HomePage() {
         setStorySeries(JSON.parse(savedSeries));
       }
       
-      // Always use ElevenLabs for testing
-      setTtsProvider("elevenlabs");
-      localStorage.setItem("tts.provider", "elevenlabs");
+      // Always use Google TTS (free & high quality)
+      setTtsProvider("google");
+      localStorage.setItem("tts.provider", "google");
       
       // Load characters
       const savedCharsList = localStorage.getItem("story.characters");
@@ -544,7 +544,8 @@ export default function HomePage() {
         const providerNames = {
           'openai': 'OpenAI TTS',
           'azure': 'Azure Speech',
-          'elevenlabs': 'ElevenLabs'
+          'elevenlabs': 'ElevenLabs',
+          'google': 'Google Cloud TTS'
         };
         showToast(`Använder ${providerNames[ttsProvider as keyof typeof providerNames]}`, "success");
       }

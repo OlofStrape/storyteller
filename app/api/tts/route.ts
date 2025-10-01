@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { openai, ensureEnv } from "@/utils/openai";
 import { generateAzureSpeech } from "@/utils/azureSpeech";
 import { generateElevenLabsSpeech } from "@/utils/elevenLabs";
+import { generateGoogleTTS } from "@/utils/googleTTS";
 
 export async function POST(req: Request) {
   const { text, voice = "shimmer", rate = 1.0, pitch = 1.0, volume = 1.0, download = false, provider = "openai" } = await req.json();
@@ -79,6 +80,19 @@ export async function POST(req: Request) {
       } catch (error: any) {
         console.error("ElevenLabs Error:", error);
         return NextResponse.json({ error: error.message || "ElevenLabs TTS failed" }, { status: 500 });
+      }
+    } else if (provider === "google") {
+      // Google Cloud Text-to-Speech - Best Swedish voices!
+      if (!process.env.GOOGLE_TTS_API_KEY) {
+        return NextResponse.json({ error: "Google TTS not configured" }, { status: 501 });
+      }
+      
+      try {
+        const arrayBuffer = await generateGoogleTTS(processedText, voice, rate);
+        buffer = Buffer.from(arrayBuffer);
+      } catch (error: any) {
+        console.error("Google TTS Error:", error);
+        return NextResponse.json({ error: error.message || "Google TTS failed" }, { status: 500 });
       }
     } else {
       return NextResponse.json({ error: "Unknown TTS provider" }, { status: 400 });

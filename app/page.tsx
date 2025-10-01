@@ -918,7 +918,7 @@ export default function HomePage() {
           </div>
         )}
 
-        <label>
+        <label style={{ textAlign: "center" }}>
           Karaktärer i sagan {characters.length > 0 && <span className="small" style={{ color: "var(--text-secondary)" }}>({characters.length}/{getCharacterLimit()})</span>}
         </label>
         <div className="chip-input">
@@ -1081,7 +1081,7 @@ export default function HomePage() {
           </div>
         )}
 
-        <label style={{ marginTop: "28px" }}>Intressen/tema {interestsTokens.accepted.length > 0 && <span className="small" style={{ color: "var(--text-secondary)" }}>({interestsTokens.accepted.length}/4)</span>}</label>
+        <label style={{ marginTop: "28px", textAlign: "center" }}>Intressen/tema {interestsTokens.accepted.length > 0 && <span className="small" style={{ color: "var(--text-secondary)" }}>({interestsTokens.accepted.length}/4)</span>}</label>
         <div className="chip-input">
           {interestsTokens.accepted.map((t) => (
             <span key={t.value} className={`chip ${t.correctedFrom ? "corrected" : ""}`}>
@@ -1143,12 +1143,17 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="controls">
+        <div className="controls" style={{ justifyContent: "center" }}>
           <button 
             className="button" 
             onClick={generateStory} 
             disabled={loading}
             aria-label="Generera en ny saga"
+            style={{ 
+              fontSize: "16px", 
+              padding: "16px 32px",
+              minWidth: "240px"
+            }}
           >
             {loading ? (
               <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -1202,12 +1207,13 @@ export default function HomePage() {
           <label>Sleep Mode (efter sagan)</label>
           <div className="row">
             <div>
+              <label style={{ textAlign: "center", fontSize: "14px", marginBottom: "6px" }}>Ljudtyp</label>
               <select value={sleepChoice} onChange={(e) => setSleepChoice(e.target.value)}>
                 <option value="white-noise">White noise</option>
                 <option value="rain">Regn</option>
                 <option value="waves">Vågor</option>
-                <option value="fireplace">Eldsprak (fireplace)</option>
-                <option value="forest">Skogsnatt (insekter/fåglar)</option>
+                <option value="fireplace">Eldsprak</option>
+                <option value="forest">Skogsnatt</option>
               </select>
             </div>
             <div>

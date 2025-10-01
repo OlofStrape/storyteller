@@ -86,9 +86,10 @@ body::after {
 .header-section {
   text-align: center;
   padding: 48px 20px 40px;
-  margin: -24px -16px 40px;
-  background: linear-gradient(180deg, rgba(21,33,58,0.8) 0%, rgba(21,33,58,0.3) 70%, transparent 100%);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin: 0 0 40px 0;
+  background: linear-gradient(180deg, rgba(21,33,58,0.6) 0%, rgba(21,33,58,0.2) 70%, transparent 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-radius: 0 0 24px 24px;
   position: relative;
 }
 .header-section::before {

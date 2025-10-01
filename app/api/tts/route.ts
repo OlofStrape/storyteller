@@ -25,7 +25,6 @@ export async function POST(req: Request) {
         model: "tts-1-hd", // Use HD model for better quality
         voice: voice as "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer",
         input: processedText,
-        format: "mp3",
         speed: Math.max(0.25, Math.min(4.0, rate)), // Clamp speed between 0.25x and 4.0x
       });
       buffer = Buffer.from(await speech.arrayBuffer());

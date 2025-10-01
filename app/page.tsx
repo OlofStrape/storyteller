@@ -4,8 +4,8 @@ import { useMemo, useState, useEffect } from "react";
 export default function HomePage() {
   const [name, setName] = useState("Victor");
   const [age, setAge] = useState(7);
-  const [interests, setInterests] = useState("husbilar, halloween");
-  const [characters, setCharacters] = useState<string[]>(["Victor"]); // Chip-based characters
+  const [interests, setInterests] = useState("");
+  const [characters, setCharacters] = useState<string[]>([]); // Chip-based characters
   const [characterDraft, setCharacterDraft] = useState("");
   const [tone, setTone] = useState("mysig");
   const [lengthMin, setLengthMin] = useState<3 | 5 | 8>(3);
@@ -348,6 +348,24 @@ export default function HomePage() {
     let progressInterval: NodeJS.Timeout | null = null;
     
     try {
+      // Check if characters or interests are empty
+      const hasCharacters = characters.length > 0;
+      const hasInterests = interestsTokens.accepted.length > 0;
+      
+      if (!hasCharacters || !hasInterests) {
+        const missingFields = [];
+        if (!hasCharacters) missingFields.push("karaktärer");
+        if (!hasInterests) missingFields.push("intressen/tema");
+        
+        const confirmed = window.confirm(
+          `⚠️ Du har inte fyllt i ${missingFields.join(" eller ")}.\n\nVill du fortsätta ändå? Sagan kommer bli mer generisk.`
+        );
+        
+        if (!confirmed) {
+          return; // User cancelled, don't generate
+        }
+      }
+      
       // Auto-premium for testing - skip all checks
       setLoading(true);
       setGenerationProgress(0);

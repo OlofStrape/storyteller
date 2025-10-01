@@ -1522,12 +1522,30 @@ export default function HomePage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
                   <div>
                     <span className="small">TTS-tjänst:</span>
-                    <select value={ttsProvider} onChange={(e) => setTtsProvider(e.target.value)} style={{ width: "100%", marginTop: "4px" }}>
+                    <select 
+                      value={ttsProvider} 
+                      onChange={(e) => {
+                        const newProvider = e.target.value;
+                        if (['openai', 'azure', 'elevenlabs'].includes(newProvider) && !hasPremium) {
+                          setShowPaywall(true);
+                          return;
+                        }
+                        setTtsProvider(newProvider);
+                      }} 
+                      style={{ width: "100%", marginTop: "4px" }}
+                    >
                       <option value="web-speech">Web Speech API (Gratis) ⭐</option>
-                      <option value="openai">OpenAI TTS (Premium) 🔒</option>
-                      <option value="azure">Azure Speech (Premium) 🔒</option>
-                      <option value="elevenlabs">ElevenLabs (Premium) 🔒</option>
+                      <option value="openai">OpenAI TTS HD (Premium) 🔒</option>
+                      <option value="azure">Azure Speech - Svenska röster (Premium) 🔒</option>
+                      <option value="elevenlabs">ElevenLabs - Bästa kvaliteten (Premium) 👑</option>
                     </select>
+                    {ttsProvider !== 'web-speech' && (
+                      <p className="small" style={{ marginTop: "4px", color: "var(--accent-gold)" }}>
+                        {ttsProvider === 'elevenlabs' && "🌟 Ultra-realistiska röster med AI"}
+                        {ttsProvider === 'azure' && "🇸🇪 Autentiska svenska röster"}
+                        {ttsProvider === 'openai' && "🤖 HD-kvalitet med naturlig intonation"}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <span className="small">Hastighet: {ttsRate.toFixed(1)}x</span>
@@ -1862,7 +1880,7 @@ export default function HomePage() {
                   <li>5 sagor/dag</li>
                   <li>Sleep Mode</li>
                   <li>Obegränsade karaktärer</li>
-                  <li>Premium-röster</li>
+                  <li>Premium-röster (OpenAI HD, Azure Svenska, ElevenLabs AI)</li>
                   <li>Sagoteman</li>
                   <li>📄 Export som PDF/TXT</li>
                   <li>⏰ Sleep Timer</li>

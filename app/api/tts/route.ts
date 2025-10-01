@@ -52,27 +52,33 @@ export async function POST(req: Request) {
       const azureVoice = azureVoiceMap[voice] || "sv-SE-HedvigNeural";
       buffer = await generateAzureSpeech(processedText, azureVoice, rate, azureConfig);
     } else if (provider === "elevenlabs") {
-      // ElevenLabs API
+      // ElevenLabs API - Premium quality voices
       const elevenLabsConfig = {
         apiKey: process.env.ELEVENLABS_API_KEY || ""
       };
       
       if (!elevenLabsConfig.apiKey) {
-        return NextResponse.json({ error: "ElevenLabs API not configured" }, { status: 501 });
+        return NextResponse.json({ error: "ElevenLabs API not configured. Please add ELEVENLABS_API_KEY to environment variables." }, { status: 501 });
       }
       
-      // Map OpenAI voices to ElevenLabs voices
+      // Map OpenAI voices to ElevenLabs voices (best for storytelling)
       const elevenLabsVoiceMap: Record<string, string> = {
-        "shimmer": "EXAVITQu4vr4xnSDxMaL", // Bella (female, warm)
-        "nova": "EXAVITQu4vr4xnSDxMaL",    // Bella (female, warm)
-        "echo": "pNInz6obpgDQGcFmaJgB",    // Adam (male, natural)
-        "alloy": "EXAVITQu4vr4xnSDxMaL",   // Default to Bella
-        "fable": "pNInz6obpgDQGcFmaJgB",   // Adam for storytelling
+        "shimmer": "XrExE9yKIg1WjnnlVkGX", // Matilda (female, warm, nurturing) - Best for kids
+        "nova": "EXAVITQu4vr4xnSDxMaL",    // Bella (female, warm, soothing)
+        "echo": "pNInz6obpgDQGcFmaJgB",    // Adam (male, natural, warm)
+        "alloy": "XrExE9yKIg1WjnnlVkGX",   // Default to Matilda
+        "fable": "VR6AewLTigWG4xSOukaG",   // Arnold (male, deep, storyteller)
         "onyx": "VR6AewLTigWG4xSOukaG"     // Arnold (male, deep)
       };
       
-      const elevenLabsVoice = elevenLabsVoiceMap[voice] || "EXAVITQu4vr4xnSDxMaL";
-      buffer = await generateElevenLabsSpeech(processedText, elevenLabsVoice, elevenLabsConfig);
+      const elevenLabsVoice = elevenLabsVoiceMap[voice] || "XrExE9yKIg1WjnnlVkGX";
+      
+      try {
+        buffer = await generateElevenLabsSpeech(processedText, elevenLabsVoice, elevenLabsConfig);
+      } catch (error: any) {
+        console.error("ElevenLabs Error:", error);
+        return NextResponse.json({ error: error.message || "ElevenLabs TTS failed" }, { status: 500 });
+      }
     } else {
       return NextResponse.json({ error: "Unknown TTS provider" }, { status: 400 });
     }

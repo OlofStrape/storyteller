@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function SuccessPage() {
+function SuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
   const [loading, setLoading] = useState(true);
@@ -138,5 +138,34 @@ export default function SuccessPage() {
         animation: "spin 1s linear infinite"
       }} />
     </div>
+  );
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ 
+        display: "flex", 
+        flexDirection: "column", 
+        alignItems: "center", 
+        justifyContent: "center", 
+        minHeight: "100vh",
+        padding: "20px",
+        textAlign: "center"
+      }}>
+        <div style={{ 
+          width: "40px", 
+          height: "40px", 
+          border: "4px solid rgba(255,255,255,0.3)", 
+          borderTop: "4px solid var(--accent)", 
+          borderRadius: "50%", 
+          animation: "spin 1s linear infinite",
+          marginBottom: "20px"
+        }} />
+        <h1>Laddar...</h1>
+      </div>
+    }>
+      <SuccessContent />
+    </Suspense>
   );
 }

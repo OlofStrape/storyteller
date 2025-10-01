@@ -27,7 +27,8 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case "checkout.session.completed":
         const session = event.data.object;
-        const { tier, period } = session.metadata;
+        const tier = session.metadata?.tier || "basic";
+        const period = session.metadata?.period || "monthly";
         
         // Here you would typically:
         // 1. Save subscription to database

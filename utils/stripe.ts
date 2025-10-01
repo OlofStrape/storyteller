@@ -1,10 +1,20 @@
 import Stripe from 'stripe';
 import { loadStripe } from '@stripe/stripe-js';
 
-// Server-side Stripe instance
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil',
-});
+// Server-side Stripe instance (lazy initialization to avoid build-time errors)
+let stripeInstance: Stripe | null = null;
+
+export const getStripeInstance = () => {
+  if (!stripeInstance && process.env.STRIPE_SECRET_KEY) {
+    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-08-27.basil',
+    });
+  }
+  if (!stripeInstance) {
+    throw new Error('STRIPE_SECRET_KEY is not set');
+  }
+  return stripeInstance;
+};
 
 // Client-side Stripe instance
 export const getStripe = () => {
@@ -46,6 +56,7 @@ export async function createCheckoutSession(
   successUrl: string,
   cancelUrl: string
 ) {
+  const stripe = getStripeInstance();
   const product = PRODUCTS[tier];
   const price = product.prices[period];
   

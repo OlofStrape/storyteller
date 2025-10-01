@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/utils/stripe";
+import { getStripeInstance } from "@/utils/stripe";
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,6 +10,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Retrieve the session from Stripe
+    const stripe = getStripeInstance();
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     
     if (!session) {

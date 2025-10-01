@@ -45,7 +45,7 @@ export default function HomePage() {
   const [showInstallPrompt, setShowInstallPrompt] = useState<boolean>(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
-  const [showDevControls, setShowDevControls] = useState<boolean>(false);
+  const [showDevControls, setShowDevControls] = useState<boolean>(true); // Always show dev controls for testing
   const [isClient, setIsClient] = useState<boolean>(false);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -830,6 +830,13 @@ export default function HomePage() {
                 🔔 Notifikationer
               </button>
             )}
+            <button
+              onClick={() => setShowDevControls(!showDevControls)}
+              className="button"
+              style={{ fontSize: "12px", padding: "4px 8px", background: "rgba(255,255,255,0.1)" }}
+            >
+              🛠️ Dev
+            </button>
           </div>
           <button 
             onClick={toggleTheme}
@@ -849,6 +856,38 @@ export default function HomePage() {
         <h1>Drömlyktan</h1>
         <p className="muted">Skapa kvällens saga</p>
         <p className="muted">Tänd Drömlyktan och gör kvällen magisk. Trygga, personliga godnattsagor – skräddarsydda efter namn, ålder och intressen. Alla features är aktiverade för testning!</p>
+
+        {showDevControls && (
+          <div style={{ 
+            background: "rgba(255,255,255,0.05)", 
+            border: "1px solid rgba(255,255,255,0.1)", 
+            borderRadius: "8px", 
+            padding: "12px", 
+            marginBottom: "16px" 
+          }}>
+            <h3 style={{ fontSize: "14px", margin: "0 0 8px", color: "var(--accent-gold)" }}>🛠️ Developer Controls</h3>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <button onClick={() => setHasPremium(!hasPremium)} className="button" style={{ fontSize: "12px", padding: "4px 8px" }}>
+                {hasPremium ? "🔒 Disable Premium" : "🚀 Enable Premium"}
+              </button>
+              <button onClick={() => setMode(mode === "openai" ? "local" : "openai")} className="button" style={{ fontSize: "12px", padding: "4px 8px" }}>
+                {mode === "openai" ? "🏠 Switch to Local" : "🤖 Switch to OpenAI"}
+              </button>
+              <button onClick={() => setTtsProvider(ttsProvider === "elevenlabs" ? "web-speech" : "elevenlabs")} className="button" style={{ fontSize: "12px", padding: "4px 8px" }}>
+                TTS: {ttsProvider === "elevenlabs" ? "ElevenLabs 👑" : "Web Speech 🆓"}
+              </button>
+              <button onClick={resetDailyUsage} className="button" style={{ fontSize: "12px", padding: "4px 8px" }}>
+                📊 Reset Usage
+              </button>
+              <button onClick={clearAllData} className="button" style={{ fontSize: "12px", padding: "4px 8px", background: "rgba(255,100,100,0.2)" }}>
+                🗑️ Clear Data
+              </button>
+            </div>
+            <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "8px" }}>
+              Status: {hasPremium ? "✅ Premium" : "❌ Free"} | Mode: {mode === "openai" ? "🤖 OpenAI" : "🏠 Local"} | TTS: {ttsProvider === "elevenlabs" ? "👑 ElevenLabs" : "🆓 Web Speech"} | Usage: {dailyUsage}/{getDailyLimit()}
+            </div>
+          </div>
+        )}
 
         <label>Huvudkaraktär {savedCharacters.length > 0 && <span className="badge">💾 {savedCharacters.length} sparad{savedCharacters.length > 1 ? 'e' : ''}</span>}</label>
         <select value={selectedCharacter} onChange={(e) => {

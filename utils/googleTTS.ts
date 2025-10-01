@@ -18,8 +18,12 @@ export async function generateGoogleTTS(
   // Parse credentials (they can be a file path or JSON string)
   let credentialsObj;
   try {
-    credentialsObj = JSON.parse(credentials);
+    // Clean up the credentials string - remove any extra whitespace or newlines
+    const cleanCredentials = credentials.trim().replace(/\n/g, '').replace(/\r/g, '');
+    credentialsObj = JSON.parse(cleanCredentials);
   } catch (e) {
+    console.error("JSON Parse Error:", e);
+    console.error("Credentials string:", credentials.substring(0, 100) + "...");
     throw new Error("GOOGLE_APPLICATION_CREDENTIALS must be a valid JSON string");
   }
   

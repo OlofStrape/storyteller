@@ -120,14 +120,9 @@ export default function HomePage() {
         setStorySeries(JSON.parse(savedSeries));
       }
       
-      // Load TTS provider preference (default to elevenlabs)
-      const savedTtsProvider = localStorage.getItem("tts.provider");
-      if (savedTtsProvider) {
-        setTtsProvider(savedTtsProvider);
-      } else {
-        // Set default to elevenlabs and save it
-        localStorage.setItem("tts.provider", "elevenlabs");
-      }
+      // Always use ElevenLabs for testing
+      setTtsProvider("elevenlabs");
+      localStorage.setItem("tts.provider", "elevenlabs");
     } catch {}
 
     // PWA Installation

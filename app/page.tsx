@@ -5,6 +5,8 @@ export default function HomePage() {
   const [name, setName] = useState("Victor");
   const [age, setAge] = useState(7);
   const [interests, setInterests] = useState("husbilar, halloween");
+  const [characters, setCharacters] = useState<string[]>(["Victor"]); // Chip-based characters
+  const [characterDraft, setCharacterDraft] = useState("");
   const [tone, setTone] = useState("mysig");
   const [lengthMin, setLengthMin] = useState<3 | 5 | 8>(3);
   const [story, setStory] = useState("");
@@ -77,6 +79,23 @@ export default function HomePage() {
     }
   };
 
+  // Calculate character limit based on premium tier
+  const getCharacterLimit = () => {
+    if (!hasPremium) return 1; // Free: 1 character
+    // Get premium tier from cookie (SSR-safe)
+    if (typeof window === 'undefined') return 4; // Default to premium tier during SSR
+    const cookie = document.cookie || "";
+    const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+    const tier = tierMatch ? tierMatch[1] : "basic";
+    
+    switch (tier) {
+      case "basic": return 2;   // Basic: 2 characters
+      case "plus": return 3;     // Plus: 3 characters
+      case "premium": return 4;  // Premium: 4 characters
+      default: return 2;
+    }
+  };
+
   const isOverDailyLimit = dailyUsage >= getDailyLimit();
 
   // Load history, characters, and ratings from localStorage on mount
@@ -123,6 +142,12 @@ export default function HomePage() {
       // Always use ElevenLabs for testing
       setTtsProvider("elevenlabs");
       localStorage.setItem("tts.provider", "elevenlabs");
+      
+      // Load characters
+      const savedCharsList = localStorage.getItem("story.characters");
+      if (savedCharsList) {
+        setCharacters(JSON.parse(savedCharsList));
+      }
     } catch {}
 
     // PWA Installation
@@ -339,7 +364,8 @@ export default function HomePage() {
       }, 200);
       // Debug: Log what we're sending
       const requestData = {
-        name,
+        name: characters.join(", "), // Join all characters as the name field
+        characters: characters, // Send characters array separately
         age,
         interests: interestsTokens.accepted.map(t => t.value),
         tone,
@@ -876,34 +902,63 @@ export default function HomePage() {
           </div>
         )}
 
-        <label>Huvudkaraktär {savedCharacters.length > 0 && <span className="badge">💾 {savedCharacters.length} sparad{savedCharacters.length > 1 ? 'e' : ''}</span>}</label>
-        <select value={selectedCharacter} onChange={(e) => {
-          setSelectedCharacter(e.target.value);
-          if (e.target.value !== "current") {
-            const character = savedCharacters.find(c => c.id === e.target.value);
-            if (character) {
-              setName(character.name);
-              setAge(character.age);
-              setInterests(character.interests);
-            }
-          }
-        }}>
-          <option value="current">✏️ Aktuell karaktär</option>
-          {savedCharacters.map(char => (
-            <option key={char.id} value={char.id}>
-              👤 {char.name} ({char.age} år) - {char.interests.split(',').slice(0, 2).join(', ')}
-            </option>
+        <label>
+          Karaktärer i sagan {characters.length > 0 && <span className="small" style={{ color: "var(--text-secondary)" }}>({characters.length}/{getCharacterLimit()})</span>}
+        </label>
+        <div className="chip-input">
+          {characters.map((char, idx) => (
+            <div key={idx} className="chip">
+              {char}
+              <span className="x" onClick={() => {
+                setCharacters(characters.filter((_, i) => i !== idx));
+              }}>×</span>
+            </div>
           ))}
-        </select>
+          <input
+            type="text"
+            value={characterDraft}
+            onChange={(e) => setCharacterDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === "Tab" || e.key === ",") {
+                e.preventDefault();
+                const trimmed = characterDraft.trim().replace(/,$/, '');
+                if (trimmed && !characters.includes(trimmed)) {
+                  if (characters.length >= getCharacterLimit()) {
+                    showToast(`Max ${getCharacterLimit()} karaktärer för din tier`, "info");
+                    return;
+                  }
+                  setCharacters([...characters, trimmed]);
+                  setCharacterDraft("");
+                  localStorage.setItem("story.characters", JSON.stringify([...characters, trimmed]));
+                } else if (trimmed) {
+                  setCharacterDraft("");
+                }
+              } else if (e.key === "Backspace" && !characterDraft && characters.length > 0) {
+                setCharacters(characters.slice(0, -1));
+              }
+            }}
+            placeholder={characters.length >= getCharacterLimit() ? `Max ${getCharacterLimit()} karaktärer` : "Lägg till karaktär (Enter/Tab/komma)"}
+            disabled={characters.length >= getCharacterLimit()}
+            style={{ flex: 1, minWidth: "120px" }}
+          />
+        </div>
+        {characters.length >= getCharacterLimit() && (
+          <p className="small" style={{ marginTop: "4px", color: "var(--accent-gold)" }}>
+            ℹ️ Max {getCharacterLimit()} karaktärer. {!hasPremium ? "Uppgradera för fler!" : getCharacterLimit() < 4 ? "Uppgradera till Premium för 4 karaktärer!" : ""}
+          </p>
+        )}
         
-        <input 
-          value={name} 
-          onChange={(e) => setName(e.target.value)} 
-          placeholder="Karaktärens namn" 
-          style={{ marginTop: 8 }}
+        <label style={{ marginTop: "12px" }}>Ålder</label>
+        <input
+          type="number"
+          value={age}
+          onChange={(e) => setAge(parseInt(e.target.value) || 3)}
+          min={3}
+          max={13}
+          style={{ marginTop: "4px" }}
         />
-        
-        <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center" }}>
+
+        <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center", display: "none" }}>
           <button 
             className="button" 
             style={{ fontSize: "12px", padding: "6px 12px" }}

@@ -4,8 +4,9 @@ import { generateAzureSpeech } from "@/utils/azureSpeech";
 import { generateElevenLabsSpeech } from "@/utils/elevenLabs";
 
 export async function POST(req: Request) {
+  const { text, voice = "shimmer", rate = 1.0, pitch = 1.0, volume = 1.0, download = false, provider = "openai" } = await req.json();
+  
   try {
-    const { text, voice = "shimmer", rate = 1.0, pitch = 1.0, volume = 1.0, download = false, provider = "openai" } = await req.json();
     if (!text) return NextResponse.json({ error: "No text" }, { status: 400 });
 
     // Enhanced text preprocessing for better TTS

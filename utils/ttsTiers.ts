@@ -122,12 +122,20 @@ export function updateUserUsageStats(
  */
 export function getGoogleVoiceForProvider(provider: 'google-wavenet' | 'google-standard', voice: string = 'shimmer'): string {
   const voiceMap: Record<string, string> = {
-    "shimmer": "sv-SE-Wavenet-A", // Female, natural
-    "nova": "sv-SE-Wavenet-E",    // Male, warm
-    "echo": "sv-SE-Wavenet-D",    // Male, deep
-    "alloy": "sv-SE-Wavenet-A",   // Default to female
-    "fable": "sv-SE-Wavenet-D",   // Male for storytelling
-    "onyx": "sv-SE-Wavenet-D"     // Male, deep
+    // Bästa svenska WaveNet-röster
+    "shimmer": "sv-SE-Wavenet-A", // Kvinna, naturlig & varm (BÄST för sagor)
+    "nova": "sv-SE-Wavenet-E",    // Man, varm & berättande (BÄST för sagor)
+    "echo": "sv-SE-Wavenet-B",    // Kvinna, mjuk & lugn
+    "alloy": "sv-SE-Wavenet-A",   // Kvinna, naturlig (samma som shimmer)
+    "fable": "sv-SE-Wavenet-C",   // Kvinna, ung & energisk
+    "onyx": "sv-SE-Wavenet-D",    // Man, djup & lugn
+    
+    // Direkta Google-röstval
+    "astrid": "sv-SE-Wavenet-A",  // Kvinna, naturlig & klar
+    "elin": "sv-SE-Wavenet-B",    // Kvinna, mjuk & vänlig
+    "anna": "sv-SE-Wavenet-C",    // Kvinna, ung & energisk
+    "nils": "sv-SE-Wavenet-D",    // Man, djup & behaglig
+    "erik": "sv-SE-Wavenet-E"     // Man, varm & berättande
   };
   
   const wavenetVoice = voiceMap[voice] || "sv-SE-Wavenet-A";

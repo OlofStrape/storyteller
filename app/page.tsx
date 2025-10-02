@@ -1651,12 +1651,18 @@ export default function HomePage() {
                   }
                   setTtsVoice(voice);
                 }}>
-                  <option value="shimmer">Shimmer (Lugn & mjuk) ⭐</option>
-                  <option value="nova">Nova (Varm & mysig) ⭐</option>
-                  <option value="alloy">Alloy (Standard)</option>
-                  <option value="echo">Echo (Djup & trygg) 🔒</option>
-                  <option value="fable">Fable (Berättarröst) 🔒</option>
-                  <option value="onyx">Onyx (Mogen & mystisk) 🔒</option>
+                  <optgroup label="🏆 Bästa för sagor (Google WaveNet)">
+                    <option value="shimmer">Astrid - Kvinna, naturlig & varm ⭐⭐⭐</option>
+                    <option value="nova">Erik - Man, varm & berättande ⭐⭐⭐</option>
+                  </optgroup>
+                  <optgroup label="👩 Kvinnliga röster">
+                    <option value="echo">Elin - Mjuk & lugn ⭐⭐</option>
+                    <option value="fable">Anna - Ung & energisk ⭐⭐</option>
+                    <option value="alloy">Astrid (alt) - Naturlig & klar ⭐⭐</option>
+                  </optgroup>
+                  <optgroup label="👨 Manliga röster">
+                    <option value="onyx">Nils - Djup & behaglig ⭐⭐</option>
+                  </optgroup>
                 </select>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
                   <div>

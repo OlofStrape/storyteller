@@ -41,18 +41,27 @@ export async function generateGoogleTTS(
 
   // Map common voice names to Google voices
   const voiceMap: Record<string, string> = {
-    "alloy": "sv-SE-Wavenet-A",
-    "echo": "sv-SE-Wavenet-B",
-    "fable": "sv-SE-Wavenet-C",
-    "onyx": "sv-SE-Wavenet-D",
-    "nova": "sv-SE-Wavenet-E",
-    "shimmer": "sv-SE-Wavenet-A",
-    // Google-specific voices
-    "sv-SE-Wavenet-A": "sv-SE-Wavenet-A", // Female
-    "sv-SE-Wavenet-B": "sv-SE-Wavenet-B", // Female
-    "sv-SE-Wavenet-C": "sv-SE-Wavenet-C", // Female
-    "sv-SE-Wavenet-D": "sv-SE-Wavenet-D", // Male
-    "sv-SE-Wavenet-E": "sv-SE-Wavenet-E", // Male
+    // Bästa svenska WaveNet-röster
+    "shimmer": "sv-SE-Wavenet-A", // Astrid - Kvinna, naturlig & varm (BÄST för sagor)
+    "nova": "sv-SE-Wavenet-E",    // Erik - Man, varm & berättande (BÄST för sagor)
+    "echo": "sv-SE-Wavenet-B",    // Elin - Kvinna, mjuk & lugn
+    "alloy": "sv-SE-Wavenet-A",   // Astrid - Kvinna, naturlig (samma som shimmer)
+    "fable": "sv-SE-Wavenet-C",   // Anna - Kvinna, ung & energisk
+    "onyx": "sv-SE-Wavenet-D",    // Nils - Man, djup & lugn
+    
+    // Direkta Google-röstval
+    "astrid": "sv-SE-Wavenet-A",  // Kvinna, naturlig & klar
+    "elin": "sv-SE-Wavenet-B",    // Kvinna, mjuk & vänlig
+    "anna": "sv-SE-Wavenet-C",    // Kvinna, ung & energisk
+    "nils": "sv-SE-Wavenet-D",    // Man, djup & behaglig
+    "erik": "sv-SE-Wavenet-E",    // Man, varm & berättande
+    
+    // Google-specific voices (direct mapping)
+    "sv-SE-Wavenet-A": "sv-SE-Wavenet-A", // Astrid - Female, natural
+    "sv-SE-Wavenet-B": "sv-SE-Wavenet-B", // Elin - Female, soft
+    "sv-SE-Wavenet-C": "sv-SE-Wavenet-C", // Anna - Female, energetic
+    "sv-SE-Wavenet-D": "sv-SE-Wavenet-D", // Nils - Male, deep
+    "sv-SE-Wavenet-E": "sv-SE-Wavenet-E", // Erik - Male, warm
   };
 
   const googleVoice = voiceMap[voice] || "sv-SE-Wavenet-A";

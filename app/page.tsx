@@ -50,6 +50,11 @@ export default function HomePage() {
   const [showDevControls, setShowDevControls] = useState<boolean>(false); // Dev controls hidden by default
   const [isClient, setIsClient] = useState<boolean>(false);
 
+  // Fix hydration issues by ensuring client-side rendering
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
@@ -97,6 +102,19 @@ export default function HomePage() {
   };
 
   const isOverDailyLimit = dailyUsage >= getDailyLimit();
+
+  // Cache story for offline access
+  function cacheStoryForOffline(story: { id: string; title: string; content: string; createdAt: number }) {
+    if ('serviceWorker' in navigator && 'caches' in window) {
+      caches.open('dromlyktan-stories').then(cache => {
+        const storyUrl = `/story/${story.id}`;
+        const storyResponse = new Response(JSON.stringify(story), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+        cache.put(storyUrl, storyResponse);
+      });
+    }
+  }
 
   // Load history, characters, and ratings from localStorage on mount
   useEffect(() => {
@@ -174,8 +192,7 @@ export default function HomePage() {
       setNotificationPermission(Notification.permission);
     }
 
-    // Set client-side flag
-    setIsClient(true);
+    // Client-side flag is already set in the useEffect above
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
@@ -389,7 +406,7 @@ export default function HomePage() {
         tone,
         lengthMin,
         mode,
-        userPreferences,
+        userPreferences: userPreferences || null,
         storyTheme,
         storySeries: storySeries ? {
           id: storySeries.id,
@@ -469,7 +486,24 @@ export default function HomePage() {
         // Web Speech API - free and natural
         if ('speechSynthesis' in window) {
           const synth = (window as any).speechSynthesis;
-          const voices = synth.getVoices();
+          
+          // Wait for voices to load if they're not available yet
+          let voices = synth.getVoices();
+          if (voices.length === 0) {
+            // Voices might not be loaded yet, wait a bit
+            await new Promise(resolve => {
+              const checkVoices = () => {
+                voices = synth.getVoices();
+                if (voices.length > 0) {
+                  resolve(void 0);
+                } else {
+                  setTimeout(checkVoices, 100);
+                }
+              };
+              checkVoices();
+            });
+          }
+          
           const utter = new SpeechSynthesisUtterance(story);
           utter.rate = ttsRate;
           utter.pitch = ttsPitch;
@@ -499,6 +533,11 @@ export default function HomePage() {
             );
           }
           
+          // Use default voice if no specific voice found
+          if (!selectedVoice && voices.length > 0) {
+            selectedVoice = voices[0];
+          }
+          
           if (selectedVoice) {
             utter.voice = selectedVoice;
             synth.cancel();
@@ -508,7 +547,7 @@ export default function HomePage() {
             return;
           }
         }
-        throw new Error("Web Speech API inte tillgänglig");
+        throw new Error("Web Speech API inte tillgänglig i denna webbläsare");
       } else {
         // Premium TTS providers
         const res = await fetch("/api/tts", {
@@ -552,21 +591,65 @@ export default function HomePage() {
     } catch (e: any) {
       console.error("TTS Error:", e);
       const errorMessage = e?.message || e?.toString() || "Unknown error";
-      setError(`TTS misslyckades (${ttsProvider}): ${errorMessage}`);
       
-      // Fallback to Web Speech API
-      if (ttsProvider !== 'web-speech' && 'speechSynthesis' in window) {
+      // If Web Speech API failed, try Google TTS as fallback
+      if (ttsProvider === 'web-speech') {
+        console.log("Web Speech API failed, trying Google TTS fallback");
         try {
-          const synth = (window as any).speechSynthesis;
-          const utter = new SpeechSynthesisUtterance(story);
-          utter.rate = ttsRate;
-          utter.pitch = ttsPitch;
-          utter.volume = ttsVolume;
-          synth.cancel();
-          synth.speak(utter);
-          showToast("Fallback till Web Speech API", "info");
-        } catch (fallbackError) {
-          setError("Alla TTS-tjänster misslyckades.");
+          const res = await fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              text: story, 
+              voice: ttsVoice, 
+              rate: ttsRate,
+              pitch: ttsPitch,
+              volume: ttsVolume,
+              provider: "google"
+            })
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || "Google TTS fallback misslyckades");
+          }
+
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          setAudioUrl(url);
+          setTimeout(() => {
+            const el = document.getElementById("story-audio") as HTMLAudioElement | null;
+            if (el) {
+              el.playbackRate = ttsRate;
+              el.play().catch(() => {});
+              setAudioEl(el);
+            }
+          }, 50);
+          
+          showToast("Använder Google TTS (fallback från Web Speech)", "success");
+          setLoading(false);
+          return;
+        } catch (fallbackError: any) {
+          console.error("Google TTS fallback failed:", fallbackError);
+          setError(`TTS misslyckades: Web Speech API och Google TTS fallback fungerar inte. ${errorMessage}`);
+        }
+      } else {
+        setError(`TTS misslyckades (${ttsProvider}): ${errorMessage}`);
+        
+        // Fallback to Web Speech API for other providers
+        if ('speechSynthesis' in window) {
+          try {
+            const synth = (window as any).speechSynthesis;
+            const utter = new SpeechSynthesisUtterance(story);
+            utter.rate = ttsRate;
+            utter.pitch = ttsPitch;
+            utter.volume = ttsVolume;
+            synth.cancel();
+            synth.speak(utter);
+            showToast("Fallback till Web Speech API", "info");
+          } catch (fallbackError) {
+            setError("Alla TTS-tjänster misslyckades.");
+          }
         }
       }
     } finally {
@@ -764,19 +847,6 @@ export default function HomePage() {
     }
   }
 
-  // Cache story for offline access
-  function cacheStoryForOffline(story: { id: string; title: string; content: string; createdAt: number }) {
-    if ('serviceWorker' in navigator && 'caches' in window) {
-      caches.open('dromlyktan-stories').then(cache => {
-        const storyUrl = `/story/${story.id}`;
-        const storyResponse = new Response(JSON.stringify(story), {
-          headers: { 'Content-Type': 'application/json' }
-        });
-        cache.put(storyUrl, storyResponse);
-      });
-    }
-  }
-
   // Check premium status from cookies
   function checkPremiumStatus() {
     if (typeof window === 'undefined') return true; // Always premium during SSR
@@ -837,6 +907,21 @@ export default function HomePage() {
       setStorySeries(null);
       showToast("🗑️ All data rensad", "info");
     }
+  }
+
+  // Don't render until client-side hydration is complete
+  if (!isClient) {
+    return (
+      <main className="container">
+        <div className="card">
+          <div style={{ textAlign: "center", padding: "40px" }}>
+            <div style={{ fontSize: "18px", color: "var(--text-secondary)" }}>
+              Laddar Drömlyktan...
+            </div>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (

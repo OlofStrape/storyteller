@@ -3,9 +3,17 @@ import { openai, ensureEnv } from "@/utils/openai";
 import { generateAzureSpeech } from "@/utils/azureSpeech";
 import { generateElevenLabsSpeech } from "@/utils/elevenLabs";
 import { generateGoogleTTS } from "@/utils/googleTTS";
+import { 
+  getUserTTSInfoFromCookies, 
+  determineTTSProvider, 
+  updateUserUsageStats,
+  getGoogleVoiceForProvider,
+  getElevenLabsVoice,
+  TTSDecision
+} from "@/utils/ttsTiers";
 
 export async function POST(req: Request) {
-  const { text, voice = "shimmer", rate = 1.0, pitch = 1.0, volume = 1.0, download = false, provider = "openai" } = await req.json();
+  const { text, voice = "shimmer", rate = 1.0, pitch = 1.0, volume = 1.0, download = false, provider = "auto", upgradeToElevenLabs = false } = await req.json();
   
   try {
     if (!text) return NextResponse.json({ error: "No text" }, { status: 400 });
@@ -18,42 +26,42 @@ export async function POST(req: Request) {
       .replace(/\s+/g, ' ') // Normalize whitespace
       .trim();
 
+    // Get user's TTS info from cookies
+    const cookieHeader = req.headers.get("cookie") || "";
+    const userTTSInfo = getUserTTSInfoFromCookies(cookieHeader);
+    
+    // Determine which TTS provider to use
+    let ttsDecision: TTSDecision;
+    
+    // Determine which TTS provider to use
+    if (provider !== "auto") {
+      // User specified a provider manually (for testing/development)
+      ttsDecision = {
+        provider: provider as 'elevenlabs' | 'google-wavenet' | 'google-standard',
+        reason: 'Manuellt vald provider',
+        canUpgrade: true,
+        upgradePrice: 3
+      };
+    } else {
+      // Auto-determine based on user tier and usage
+      ttsDecision = determineTTSProvider(userTTSInfo);
+    }
+    
+    // Override with upgrade if requested
+    if (upgradeToElevenLabs && ttsDecision.canUpgrade) {
+      ttsDecision = {
+        provider: 'elevenlabs',
+        reason: 'Användare valde att uppgradera till Magisk röst för 5 kr',
+        canUpgrade: false,
+        upgradePrice: 5
+      };
+    }
+
     let buffer: Buffer;
     let contentType = "audio/mpeg";
 
-    if (provider === "openai") {
-      ensureEnv();
-      const speech = await openai.audio.speech.create({
-        model: "tts-1-hd", // Use HD model for better quality
-        voice: voice as "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer",
-        input: processedText,
-        speed: Math.max(0.25, Math.min(4.0, rate)), // Clamp speed between 0.25x and 4.0x
-      });
-      buffer = Buffer.from(await speech.arrayBuffer());
-    } else if (provider === "azure") {
-      // Azure Speech Service
-      const azureConfig = {
-        apiKey: process.env.AZURE_SPEECH_KEY || "",
-        region: process.env.AZURE_SPEECH_REGION || "swedencentral"
-      };
-      
-      if (!azureConfig.apiKey) {
-        return NextResponse.json({ error: "Azure Speech Service not configured" }, { status: 501 });
-      }
-      
-      // Map OpenAI voices to Azure voices
-      const azureVoiceMap: Record<string, string> = {
-        "shimmer": "sv-SE-HedvigNeural", // Swedish female, natural
-        "nova": "sv-SE-SofieNeural",     // Swedish female, young
-        "echo": "sv-SE-MattiasNeural",   // Swedish male, natural
-        "alloy": "sv-SE-HedvigNeural",   // Default to Swedish
-        "fable": "sv-SE-MattiasNeural",  // Male for storytelling
-        "onyx": "sv-SE-MattiasNeural"    // Male, deep
-      };
-      
-      const azureVoice = azureVoiceMap[voice] || "sv-SE-HedvigNeural";
-      buffer = await generateAzureSpeech(processedText, azureVoice, rate, azureConfig);
-    } else if (provider === "elevenlabs") {
+    // Generate TTS based on determined provider
+    if (ttsDecision.provider === "elevenlabs") {
       // ElevenLabs API - Premium quality voices
       const elevenLabsConfig = {
         apiKey: process.env.ELEVENLABS_API_KEY || ""
@@ -63,17 +71,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "ElevenLabs API not configured. Please add ELEVENLABS_API_KEY to environment variables." }, { status: 501 });
       }
       
-      // Map OpenAI voices to ElevenLabs voices (Swedish voices)
-      const elevenLabsVoiceMap: Record<string, string> = {
-        "shimmer": "4Ct5uMEndw4cJ7q0Jx0l", // Swedish voice 1 - Soft & warm
-        "nova": "kkwvaJeTPw4KK0sBdyvD",    // Swedish voice 2 - Young & gentle
-        "echo": "aSLKtNoVBZlxQEMsnGL2",    // Swedish voice 3 - Natural & calm
-        "alloy": "4Ct5uMEndw4cJ7q0Jx0l",   // Default to voice 1
-        "fable": "aSLKtNoVBZlxQEMsnGL2",   // Natural storytelling
-        "onyx": "aSLKtNoVBZlxQEMsnGL2"     // Deep & soothing
-      };
-      
-      const elevenLabsVoice = elevenLabsVoiceMap[voice] || "4Ct5uMEndw4cJ7q0Jx0l";
+      const elevenLabsVoice = getElevenLabsVoice(voice);
       
       try {
         buffer = await generateElevenLabsSpeech(processedText, elevenLabsVoice, elevenLabsConfig);
@@ -81,14 +79,15 @@ export async function POST(req: Request) {
         console.error("ElevenLabs Error:", error);
         return NextResponse.json({ error: error.message || "ElevenLabs TTS failed" }, { status: 500 });
       }
-    } else if (provider === "google") {
-      // Google Cloud Text-to-Speech - Best Swedish voices!
+    } else if (ttsDecision.provider === "google-wavenet" || ttsDecision.provider === "google-standard") {
+      // Google Cloud Text-to-Speech - Swedish voices with different quality levels
       if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
         return NextResponse.json({ error: "Google TTS not configured" }, { status: 501 });
       }
       
       try {
-        const arrayBuffer = await generateGoogleTTS(processedText, voice, rate);
+        const googleVoice = getGoogleVoiceForProvider(ttsDecision.provider, voice);
+        const arrayBuffer = await generateGoogleTTS(processedText, googleVoice, rate);
         buffer = Buffer.from(arrayBuffer);
       } catch (error: any) {
         console.error("Google TTS Error:", error);
@@ -98,13 +97,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unknown TTS provider" }, { status: 400 });
     }
 
+    // Update user usage statistics
+    const updatedUserInfo = updateUserUsageStats(userTTSInfo, ttsDecision.provider);
+    
     const headers: Record<string, string> = {
       "Content-Type": contentType,
-      "Cache-Control": "public, max-age=31536000, immutable"
+      "Cache-Control": "public, max-age=31536000, immutable",
+      // Add TTS decision info to headers for client-side processing
+      "X-TTS-Provider": ttsDecision.provider,
+      "X-TTS-Reason": ttsDecision.reason,
+      "X-Can-Upgrade": ttsDecision.canUpgrade.toString(),
+      "X-Upgrade-Price": ttsDecision.upgradePrice.toString(),
+      "X-ElevenLabs-Remaining": (userTTSInfo.maxElevenLabsFree - updatedUserInfo.elevenLabsStoriesUsed).toString(),
+      "X-Stories-Generated": updatedUserInfo.storiesGenerated.toString()
     };
+    
     if (download) {
       headers["Content-Disposition"] = `attachment; filename="dromlyktan-${Date.now()}.mp3"`;
     }
+    
     return new NextResponse(buffer, { headers });
   } catch (e: any) {
     console.error("TTS Error:", e);

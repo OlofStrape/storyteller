@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { openai, ensureEnv } from "@/utils/openai";
 import { generateLocalStory } from "@/utils/localStory";
-import { rateLimit } from "@/utils/rateLimit";
+import { rateLimit, tierBasedRateLimit, getTierRateLimitInfo } from "@/utils/rateLimit";
+import { getUserTTSInfoFromCookies } from "@/utils/ttsTiers";
 
 function hasTitleFirstLine(text: string): boolean {
   const [first] = (text || "").split(/\r?\n/);
@@ -96,16 +97,25 @@ export async function POST(req: Request) {
   try {
     ensureEnv();
     
-    // Rate limiting
+    // Get user's tier for rate limiting
+    const cookieHeader = req.headers.get("cookie") || "";
+    const userTTSInfo = getUserTTSInfoFromCookies(cookieHeader);
+    
+    // Tier-based rate limiting
     const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-    if (!rateLimit(clientIP, 5, 60000)) { // 5 requests per minute
-      return NextResponse.json({ error: "För många förfrågningar. Försök igen om en minut." }, { status: 429 });
+    if (!tierBasedRateLimit(clientIP, userTTSInfo.tier, 'hour')) {
+      const rateLimitInfo = getTierRateLimitInfo(clientIP, userTTSInfo.tier, 'hour');
+      const resetTime = rateLimitInfo ? new Date(rateLimitInfo.resetTime).toLocaleString('sv-SE') : 'okänt';
+      return NextResponse.json({ 
+        error: `För många förfrågningar för din nivå. Du kan generera ${rateLimitInfo?.limit || 10} sagor per timme. Försök igen efter ${resetTime}.`,
+        rateLimitInfo 
+      }, { status: 429 });
     }
     
     const { name, age, interests = [], tone = "mysig", lengthMin = 3, mode, userPreferences, storyTheme = "standard", storySeries } = await req.json();
 
-    const cookieHeader = (req.headers.get("cookie") || "").toLowerCase();
-    const hasPremium = /(?:^|;\s*)premium=1(?:;|$)/.test(cookieHeader);
+    const cookieHeaderLower = cookieHeader.toLowerCase();
+    const hasPremium = /(?:^|;\s*)premium=1(?:;|$)/.test(cookieHeaderLower);
     
     // Check length limits based on premium tier
     if (lengthMin > 3 && !hasPremium) {
@@ -113,7 +123,7 @@ export async function POST(req: Request) {
     }
     
     if (hasPremium) {
-      const tierMatch = cookieHeader.match(/premium_tier=([^;]+)/);
+      const tierMatch = cookieHeaderLower.match(/premium_tier=([^;]+)/);
       const tier = tierMatch ? tierMatch[1] : "basic";
       
       if (tier === "basic" && lengthMin > 8) {
@@ -201,11 +211,14 @@ export async function POST(req: Request) {
     console.log("LOCAL_STORY env:", process.env.LOCAL_STORY);
     console.log("Using local story:", mode === "local" || process.env.LOCAL_STORY === "1");
 
-    // Force OpenAI if mode is "openai" (override environment variables)
-    if (mode === "openai") {
+    // Check if OpenAI API key is available
+    const hasOpenAIKey = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.trim() !== "";
+    
+    // Force OpenAI if mode is "openai" and key is available
+    if (mode === "openai" && hasOpenAIKey) {
       console.log("Forcing OpenAI mode - ignoring LOCAL_STORY env");
-    } else if (mode === "local" || process.env.LOCAL_STORY === "1") {
-      console.log("Generating LOCAL story");
+    } else if (mode === "local" || process.env.LOCAL_STORY === "1" || !hasOpenAIKey) {
+      console.log("Generating LOCAL story (mode:", mode, "hasOpenAIKey:", hasOpenAIKey, ")");
       const story = generateLocalStory({
         name,
         age,
@@ -267,10 +280,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ story: demo });
     }
     const status = typeof e?.status === "number" ? e.status : e?.code === "insufficient_quota" ? 429 : 500;
-    const message =
-      status === 429
-        ? "OpenAI-kvoten är slut eller spärrad. Kolla plan/billing eller byt nyckel."
-        : e?.message || "Okänt fel";
+    let message = e?.message || "Okänt fel";
+    
+    // Better error messages for common OpenAI issues
+    if (e?.code === "invalid_api_key") {
+      message = "OpenAI API-nyckeln är ogiltig. Kontrollera att nyckeln är korrekt.";
+    } else if (e?.code === "insufficient_quota") {
+      message = "OpenAI-kvoten är slut. Kontrollera din billing eller uppgradera din plan.";
+    } else if (e?.code === "rate_limit_exceeded") {
+      message = "För många förfrågningar till OpenAI. Vänta en stund och försök igen.";
+    } else if (e?.message?.includes("API key")) {
+      message = "OpenAI API-nyckel saknas eller är ogiltig. Växla till lokalt läge för att testa.";
+    }
+    
     return NextResponse.json({ error: message }, { status });
   }
 }

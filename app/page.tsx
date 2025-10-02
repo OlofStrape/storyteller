@@ -547,7 +547,45 @@ export default function HomePage() {
             return;
           }
         }
-        throw new Error("Web Speech API inte tillgänglig i denna webbläsare");
+        // Web Speech API not available, automatically try Google TTS
+        console.log("Web Speech API not available, trying Google TTS automatically");
+        try {
+          const res = await fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              text: story, 
+              voice: ttsVoice, 
+              rate: ttsRate,
+              pitch: ttsPitch,
+              volume: ttsVolume,
+              provider: "google"
+            })
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || "Google TTS misslyckades");
+          }
+
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          setAudioUrl(url);
+          setTimeout(() => {
+            const el = document.getElementById("story-audio") as HTMLAudioElement | null;
+            if (el) {
+              el.playbackRate = ttsRate;
+              el.play().catch(() => {});
+              setAudioEl(el);
+            }
+          }, 50);
+          
+          showToast("Använder Google TTS (Web Speech API inte tillgänglig)", "success");
+          setLoading(false);
+          return;
+        } catch (googleError: any) {
+          throw new Error(`Web Speech API och Google TTS fungerar inte: ${googleError.message}`);
+        }
       } else {
         // Premium TTS providers
         const res = await fetch("/api/tts", {
@@ -631,7 +669,7 @@ export default function HomePage() {
           return;
         } catch (fallbackError: any) {
           console.error("Google TTS fallback failed:", fallbackError);
-          setError(`TTS misslyckades: Web Speech API och Google TTS fallback fungerar inte. ${errorMessage}`);
+          setError(`TTS misslyckades: Web Speech API och Google TTS fallback fungerar inte. Kontrollera att Google TTS är konfigurerat. ${errorMessage}`);
         }
       } else {
         setError(`TTS misslyckades (${ttsProvider}): ${errorMessage}`);

@@ -32,38 +32,49 @@
 3. Klicka på API:et
 4. Klicka **"ENABLE"**
 
-### 4. Skapa API-nyckel
+### 4. Skapa Service Account (för server-side användning)
 
-1. Gå till: https://console.cloud.google.com/apis/credentials
-2. Klicka **"+ CREATE CREDENTIALS"**
-3. Välj **"API key"**
-4. Din API-nyckel visas nu! Kopiera den
+1. Gå till: https://console.cloud.google.com/iam-admin/serviceaccounts
+2. Klicka **"+ CREATE SERVICE ACCOUNT"**
+3. Fyll i:
+   - **Service account name**: `dromlyktan-tts`
+   - **Service account ID**: `dromlyktan-tts` (genereras automatiskt)
+   - **Description**: `Text-to-Speech service for Drömlyktan`
+4. Klicka **"CREATE AND CONTINUE"**
+5. Under **"Grant this service account access to project"**:
+   - **Role**: Välj **"Cloud Text-to-Speech Client"**
+6. Klicka **"CONTINUE"** → **"DONE"**
 
-**Säkerhet (Viktigt!):**
-- Klicka **"RESTRICT KEY"**
-- Under **"API restrictions"**, välj **"Restrict key"**
-- Välj endast **"Cloud Text-to-Speech API"**
-- Under **"Application restrictions"**, kan du välja **"HTTP referrers"** och lägga till din domän
-- Klicka **"SAVE"**
+### 5. Skapa och ladda ner nyckel
 
-### 5. Lägg till i ditt projekt
+1. Klicka på din nya service account i listan
+2. Gå till **"KEYS"**-fliken
+3. Klicka **"ADD KEY"** → **"Create new key"**
+4. Välj **"JSON"** format
+5. Klicka **"CREATE"** - filen laddas ner automatiskt
+6. **VIKTIGT**: Spara denna fil säkert - den innehåller din privata nyckel!
+
+### 6. Lägg till i ditt projekt
 
 1. Öppna `.env.local` (eller skapa filen om den inte finns)
-2. Lägg till:
+2. Öppna den nedladdade JSON-filen i en textredigerare
+3. Kopiera **hela innehållet** av JSON-filen (från `{` till `}`)
+4. Lägg till i `.env.local`:
    ```
-   GOOGLE_TTS_API_KEY=AIzaSy...din_api_nyckel_här
+   GOOGLE_APPLICATION_CREDENTIALS={"type":"service_account","project_id":"dromlyktan",...}
    ```
-3. Spara filen
-4. Starta om dev-servern: `npm run dev`
+   **VIKTIGT**: Klistra in hela JSON-innehållet på en rad, utan radbrytningar!
+5. Spara filen
+6. Starta om dev-servern: `npm run dev`
 
-### 6. Lägg till i Vercel (Production)
+### 7. Lägg till i Vercel (Production)
 
 1. Gå till: https://vercel.com/dashboard
 2. Välj ditt projekt
 3. Gå till **Settings** → **Environment Variables**
 4. Lägg till:
-   - **Key**: `GOOGLE_TTS_API_KEY`
-   - **Value**: Din API-nyckel
+   - **Key**: `GOOGLE_APPLICATION_CREDENTIALS`
+   - **Value**: Hela innehållet av din JSON-fil (på en rad)
    - **Environment**: Production, Preview, Development (välj alla)
 5. Klicka **"Save"**
 6. Redeploya projektet
@@ -122,13 +133,18 @@ Om du genererar 200 sagor/månad (2 miljoner tecken):
 ## ❓ Felsökning
 
 ### "Google TTS not configured"
-- Kontrollera att `GOOGLE_TTS_API_KEY` finns i `.env.local`
+- Kontrollera att `GOOGLE_APPLICATION_CREDENTIALS` finns i `.env.local`
 - Starta om dev-servern
 
-### "API key not valid"
-- Kontrollera att API-nyckeln är kopierad korrekt (ingen extra whitespace)
-- Kontrollera att Text-to-Speech API är aktiverat
-- Vänta några minuter efter att ha skapat nyckeln
+### "Credentials Error" eller "JSON parse error"
+- Kontrollera att hela JSON-innehållet är kopierat korrekt
+- Se till att det inte finns radbrytningar i JSON-strängen
+- Kontrollera att alla citattecken är korrekta (`"` inte `"` eller `'`)
+
+### "Failed to get access token"
+- Kontrollera att Text-to-Speech API är aktiverat i Google Cloud Console
+- Kontrollera att service account har rätt behörigheter
+- Vänta några minuter efter att ha skapat service account
 
 ### "Quota exceeded"
 - Du har använt upp 1M tecken för månaden

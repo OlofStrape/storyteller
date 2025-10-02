@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "next dev -p 3010",
     "build": "next build",
-    "start": "next start -p 3010"
+    "start": "next start -p 3010",
+    "test:google-tts": "node scripts/test-google-tts.js",
+    "verify:google-setup": "node scripts/verify-google-setup.js"
   },
   "dependencies": {
     "@stripe/stripe-js": "^7.9.0",

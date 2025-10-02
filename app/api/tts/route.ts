@@ -36,8 +36,18 @@ export async function POST(req: Request) {
     // Determine which TTS provider to use
     if (provider !== "auto") {
       // User specified a provider manually (for testing/development)
+      let mappedProvider: 'elevenlabs' | 'google-wavenet' | 'google-standard';
+      
+      if (provider === "google") {
+        mappedProvider = "google-wavenet"; // Default to high-quality Google TTS
+      } else if (provider === "elevenlabs") {
+        mappedProvider = "elevenlabs";
+      } else {
+        mappedProvider = provider as 'elevenlabs' | 'google-wavenet' | 'google-standard';
+      }
+      
       ttsDecision = {
-        provider: provider as 'elevenlabs' | 'google-wavenet' | 'google-standard',
+        provider: mappedProvider,
         reason: 'Manuellt vald provider',
         canUpgrade: true,
         upgradePrice: 3

@@ -12,29 +12,18 @@ export async function generateGoogleTTS(
   const credentials = process.env.GOOGLE_APPLICATION_CREDENTIALS;
   
   if (!credentials) {
-    throw new Error("GOOGLE_APPLICATION_CREDENTIALS is not configured");
+    throw new Error("Google TTS not configured. Please set GOOGLE_APPLICATION_CREDENTIALS environment variable with your service account JSON.");
   }
   
-  // Parse credentials (they can be a file path or JSON string)
+  // Parse credentials (expecting JSON string from environment variable)
   let credentialsObj;
   try {
-    // Check if it's a file path (ends with .json) or JSON string
-    if (credentials.endsWith('.json')) {
-      // Read from file
-      const fs = require('fs');
-      const path = require('path');
-      const credentialsPath = path.resolve(process.cwd(), credentials);
-      const credentialsFile = fs.readFileSync(credentialsPath, 'utf8');
-      credentialsObj = JSON.parse(credentialsFile);
-    } else {
-      // Parse as JSON string
-      const cleanCredentials = credentials.trim().replace(/\n/g, '').replace(/\r/g, '');
-      credentialsObj = JSON.parse(cleanCredentials);
-    }
+    // Parse as JSON string from environment variable
+    const cleanCredentials = credentials.trim().replace(/\n/g, '').replace(/\r/g, '');
+    credentialsObj = JSON.parse(cleanCredentials);
   } catch (e) {
-    console.error("Credentials Error:", e);
-    console.error("Credentials value:", credentials.substring(0, 100) + "...");
-    throw new Error("GOOGLE_APPLICATION_CREDENTIALS must be a valid JSON file path or JSON string");
+    console.error("Google TTS Credentials Error:", e);
+    throw new Error("GOOGLE_APPLICATION_CREDENTIALS must be a valid JSON string. Please paste your service account JSON content directly into the environment variable.");
   }
   
   // Create auth client

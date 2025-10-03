@@ -2310,6 +2310,193 @@ export default function HomePage() {
                       }}
                     >🔄 Generera ny MP3</button>
                   </div>
+                  
+                  {/* Sleep Mode Controls in Player */}
+                  <div style={{ 
+                    display: "grid", 
+                    gridTemplateColumns: "1fr 1fr", 
+                    gap: "12px",
+                    alignItems: "end",
+                    marginTop: "12px",
+                    padding: "12px",
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px solid rgba(255,255,255,0.05)",
+                    borderRadius: "8px"
+                  }}>
+                    {/* Sleep Sound Selection */}
+                    <div>
+                      <label style={{ 
+                        display: "block", 
+                        fontSize: "12px", 
+                        marginBottom: "6px", 
+                        color: "var(--text-secondary)",
+                        fontWeight: "500"
+                      }}>
+                        Sleep Mode Ljud
+                        {(() => {
+                          // Check if user has Pro or Premium tier
+                          if (!hasPremium) return <span style={{ color: "var(--accent-gold)", marginLeft: "4px" }}>🔒</span>;
+                          
+                          const cookie = document.cookie || "";
+                          const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                          const tier = tierMatch ? tierMatch[1] : "basic";
+                          
+                          if (tier !== "pro" && tier !== "premium") {
+                            return <span style={{ color: "var(--accent-gold)", marginLeft: "4px" }}>🔒</span>;
+                          }
+                          return null;
+                        })()}
+                      </label>
+                      <select 
+                        value={sleepChoice} 
+                        onChange={(e) => {
+                          // Check tier before allowing change
+                          if (!hasPremium) {
+                            setShowPaywall(true);
+                            return;
+                          }
+                          
+                          const cookie = document.cookie || "";
+                          const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                          const tier = tierMatch ? tierMatch[1] : "basic";
+                          
+                          if (tier !== "pro" && tier !== "premium") {
+                            setShowPaywall(true);
+                            return;
+                          }
+                          
+                          setSleepChoice(e.target.value);
+                        }}
+                        style={{
+                          width: "100%",
+                          padding: "6px 8px",
+                          background: "rgba(255,255,255,0.05)",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          borderRadius: "6px",
+                          color: "var(--text-primary)",
+                          fontSize: "12px",
+                          opacity: (() => {
+                            if (!hasPremium) return 0.6;
+                            const cookie = document.cookie || "";
+                            const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                            const tier = tierMatch ? tierMatch[1] : "basic";
+                            return (tier === "pro" || tier === "premium") ? 1 : 0.6;
+                          })()
+                        }}
+                      >
+                        <option value="white-noise">White noise</option>
+                        <option value="rain">Regn</option>
+                        <option value="waves">Vågor</option>
+                        <option value="fireplace">Eldsprak</option>
+                        <option value="forest">Skogsnatt</option>
+                      </select>
+                    </div>
+
+                    {/* Sleep Timer */}
+                    <div>
+                      <label style={{ 
+                        display: "block", 
+                        fontSize: "12px", 
+                        marginBottom: "6px", 
+                        color: "var(--text-secondary)",
+                        fontWeight: "500"
+                      }}>
+                        Sleep Timer
+                        {(() => {
+                          // Check if user has Pro or Premium tier
+                          if (!hasPremium) return <span style={{ color: "var(--accent-gold)", marginLeft: "4px" }}>🔒</span>;
+                          
+                          const cookie = document.cookie || "";
+                          const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                          const tier = tierMatch ? tierMatch[1] : "basic";
+                          
+                          if (tier !== "pro" && tier !== "premium") {
+                            return <span style={{ color: "var(--accent-gold)", marginLeft: "4px" }}>🔒</span>;
+                          }
+                          return null;
+                        })()}
+                      </label>
+                      <select 
+                        value={sleepTimer} 
+                        onChange={(e) => {
+                          // Check tier before allowing change
+                          if (!hasPremium) {
+                            setShowPaywall(true);
+                            return;
+                          }
+                          
+                          const cookie = document.cookie || "";
+                          const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                          const tier = tierMatch ? tierMatch[1] : "basic";
+                          
+                          if (tier !== "pro" && tier !== "premium") {
+                            setShowPaywall(true);
+                            return;
+                          }
+                          
+                          setSleepTimer(Number(e.target.value));
+                        }}
+                        style={{
+                          width: "100%",
+                          padding: "6px 8px",
+                          background: "rgba(255,255,255,0.05)",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          borderRadius: "6px",
+                          color: "var(--text-primary)",
+                          fontSize: "12px",
+                          opacity: (() => {
+                            if (!hasPremium) return 0.6;
+                            const cookie = document.cookie || "";
+                            const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                            const tier = tierMatch ? tierMatch[1] : "basic";
+                            return (tier === "pro" || tier === "premium") ? 1 : 0.6;
+                          })()
+                        }}
+                      >
+                        <option value={0}>Av</option>
+                        <option value={10}>10 min</option>
+                        <option value={20}>20 min</option>
+                        <option value={30}>30 min</option>
+                        <option value={45}>45 min</option>
+                        <option value={60}>60 min</option>
+                        <option value={90}>90 min</option>
+                        <option value={120}>120 min</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  {/* Sleep Mode Status */}
+                  {playingSleep && (
+                    <div style={{ 
+                      marginTop: "8px", 
+                      padding: "8px 12px", 
+                      background: "rgba(255,165,0,0.1)", 
+                      border: "1px solid rgba(255,165,0,0.3)", 
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                      color: "var(--accent-gold)",
+                      textAlign: "center"
+                    }}>
+                      🔊 Spelar: {sleepChoice === "white-noise" ? "White noise" : 
+                              sleepChoice === "rain" ? "Regn" :
+                              sleepChoice === "waves" ? "Vågor" :
+                              sleepChoice === "fireplace" ? "Eldsprak" : "Skogsnatt"}
+                      {sleepTimerActive && ` • ⏰ ${sleepTimer} min kvar`}
+                      <button
+                        className="button"
+                        onClick={stopSleepMode}
+                        style={{
+                          marginLeft: "8px",
+                          padding: "4px 8px",
+                          fontSize: "10px",
+                          background: "#ff6b6b",
+                          border: "1px solid #ff6b6b"
+                        }}
+                      >
+                        ⏹️ Stoppa
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { openai, ensureEnv } from "@/utils/openai";
 import { generateLocalStory } from "@/utils/localStory";
 import { rateLimit, tierBasedRateLimit, getTierRateLimitInfo } from "@/utils/rateLimit";
-import { getUserTTSInfoFromCookies } from "@/utils/ttsTiers";
+import { getUserTTSInfoFromCookies, getMaxStoryLengthForTier, getMaxWeeklyStoriesForTier } from "@/utils/ttsTiers";
 
 function hasTitleFirstLine(text: string): boolean {
   const [first] = (text || "").split(/\r?\n/);
@@ -117,21 +117,21 @@ export async function POST(req: Request) {
     const cookieHeaderLower = cookieHeader.toLowerCase();
     const hasPremium = /(?:^|;\s*)premium=1(?:;|$)/.test(cookieHeaderLower);
     
-    // Check length limits based on premium tier
-    if (lengthMin > 3 && !hasPremium) {
-      return NextResponse.json({ error: "Premium krävs för längder över 3 minuter." }, { status: 402 });
+    // Check length limits based on tier
+    const tier = userTTSInfo.tier;
+    const lengthLimits = getMaxStoryLengthForTier(tier);
+    
+    if (lengthMin < lengthLimits.min || lengthMin > lengthLimits.max) {
+      return NextResponse.json({ 
+        error: `${tier.charAt(0).toUpperCase() + tier.slice(1)}-nivån stöder sagor mellan ${lengthLimits.min}-${lengthLimits.max} minuter.` 
+      }, { status: 402 });
     }
     
-    if (hasPremium) {
-      const tierMatch = cookieHeaderLower.match(/premium_tier=([^;]+)/);
-      const tier = tierMatch ? tierMatch[1] : "basic";
-      
-      if (tier === "basic" && lengthMin > 8) {
-        return NextResponse.json({ error: "Basic-nivån stöder max 8 minuter. Uppgradera till Plus för längre sagor." }, { status: 402 });
-      }
-      if (tier === "plus" && lengthMin > 10) {
-        return NextResponse.json({ error: "Plus-nivån stöder max 10 minuter. Uppgradera till Premium för längre sagor." }, { status: 402 });
-      }
+    // Check weekly story limits
+    if (userTTSInfo.weeklyStoriesGenerated >= userTTSInfo.maxWeeklyStories) {
+      return NextResponse.json({ 
+        error: `Du har nått din veckolimit på ${userTTSInfo.maxWeeklyStories} sagor. Uppgradera för fler sagor per vecka.` 
+      }, { status: 402 });
     }
 
     const maxWords = lengthMin <= 3 ? 450 : lengthMin <= 5 ? 700 : lengthMin <= 8 ? 1000 : lengthMin <= 12 ? 1500 : 2000;

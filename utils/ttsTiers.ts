@@ -2,10 +2,12 @@
 // Hanterar vilken TTS-provider som ska användas baserat på användarens tier och användningshistorik
 
 export interface UserTTSInfo {
-  tier: 'free' | 'plus' | 'premium';
+  tier: 'free' | 'basic' | 'pro' | 'premium';
   storiesGenerated: number;
   elevenLabsStoriesUsed: number;
   maxElevenLabsFree: number;
+  weeklyStoriesGenerated: number;
+  maxWeeklyStories: number;
 }
 
 export interface TTSDecision {
@@ -21,18 +23,8 @@ export interface TTSDecision {
 export function determineTTSProvider(userInfo: UserTTSInfo): TTSDecision {
   const { tier, storiesGenerated, elevenLabsStoriesUsed, maxElevenLabsFree } = userInfo;
 
-  // Premium användare får alltid ElevenLabs
+  // Premium användare: 10 gratis ElevenLabs, sedan Google TTS
   if (tier === 'premium') {
-    return {
-      provider: 'elevenlabs',
-      reason: 'Premium tier inkluderar ElevenLabs för alla sagor',
-      canUpgrade: false,
-      upgradePrice: 0
-    };
-  }
-
-  // Gratis användare: 3 första sagorna med ElevenLabs, sedan Google Standard
-  if (tier === 'free') {
     if (elevenLabsStoriesUsed < maxElevenLabsFree) {
       return {
         provider: 'elevenlabs',
@@ -42,22 +34,69 @@ export function determineTTSProvider(userInfo: UserTTSInfo): TTSDecision {
       };
     } else {
       return {
-        provider: 'google-standard',
-        reason: 'Du har använt dina gratis Magiska röster. Uppgradera för Magisk röst.',
+        provider: 'google-wavenet',
+        reason: 'Du har använt dina gratis Magiska röster. Uppgradera för fler Magiska röster.',
         canUpgrade: true,
         upgradePrice: 5
       };
     }
   }
 
-  // Plus användare: Google Wavenet (högre kvalitet än Standard)
-  if (tier === 'plus') {
-    return {
-      provider: 'google-wavenet',
-      reason: 'Plus tier inkluderar Premiumröst (högre kvalitet)',
-      canUpgrade: true,
-      upgradePrice: 5
-    };
+  // Pro användare: 5 gratis ElevenLabs, sedan Google TTS
+  if (tier === 'pro') {
+    if (elevenLabsStoriesUsed < maxElevenLabsFree) {
+      return {
+        provider: 'elevenlabs',
+        reason: `Du har ${maxElevenLabsFree - elevenLabsStoriesUsed} Magiska röster kvar (av ${maxElevenLabsFree} gratis)`,
+        canUpgrade: false,
+        upgradePrice: 0
+      };
+    } else {
+      return {
+        provider: 'google-wavenet',
+        reason: 'Du har använt dina gratis Magiska röster. Uppgradera för fler Magiska röster.',
+        canUpgrade: true,
+        upgradePrice: 5
+      };
+    }
+  }
+
+  // Basic användare: 2 gratis ElevenLabs, sedan Google TTS
+  if (tier === 'basic') {
+    if (elevenLabsStoriesUsed < maxElevenLabsFree) {
+      return {
+        provider: 'elevenlabs',
+        reason: `Du har ${maxElevenLabsFree - elevenLabsStoriesUsed} Magiska röster kvar (av ${maxElevenLabsFree} gratis)`,
+        canUpgrade: false,
+        upgradePrice: 0
+      };
+    } else {
+      return {
+        provider: 'google-wavenet',
+        reason: 'Du har använt dina gratis Magiska röster. Uppgradera för fler Magiska röster.',
+        canUpgrade: true,
+        upgradePrice: 5
+      };
+    }
+  }
+
+  // Gratis användare: 1 gratis ElevenLabs, sedan Google Standard
+  if (tier === 'free') {
+    if (elevenLabsStoriesUsed < maxElevenLabsFree) {
+      return {
+        provider: 'elevenlabs',
+        reason: `Du har ${maxElevenLabsFree - elevenLabsStoriesUsed} Magiska röst kvar (av ${maxElevenLabsFree} gratis)`,
+        canUpgrade: false,
+        upgradePrice: 0
+      };
+    } else {
+      return {
+        provider: 'google-standard',
+        reason: 'Du har använt din gratis Magiska röst. Uppgradera för fler Magiska röster.',
+        canUpgrade: true,
+        upgradePrice: 5
+      };
+    }
   }
 
   // Fallback
@@ -78,7 +117,7 @@ export function getUserTTSInfoFromCookies(cookieHeader: string): UserTTSInfo {
   // Kontrollera premium status
   const hasPremium = /(?:^|;\s*)premium=1(?:;|$)/.test(cookies);
   const tierMatch = cookies.match(/premium_tier=([^;]+)/);
-  const tier = tierMatch ? tierMatch[1] as 'free' | 'plus' | 'premium' : 'free';
+  const tier = tierMatch ? tierMatch[1] as 'free' | 'basic' | 'pro' | 'premium' : 'free';
   
   // Hämta användningsstatistik från cookies (eller localStorage på frontend)
   const storiesGeneratedMatch = cookies.match(/stories_generated=(\d+)/);
@@ -87,14 +126,20 @@ export function getUserTTSInfoFromCookies(cookieHeader: string): UserTTSInfo {
   const elevenLabsUsedMatch = cookies.match(/elevenlabs_used=(\d+)/);
   const elevenLabsStoriesUsed = elevenLabsUsedMatch ? parseInt(elevenLabsUsedMatch[1]) : 0;
   
-  // Antal gratis ElevenLabs-sagor
-  const maxElevenLabsFree = 3;
+  const weeklyStoriesMatch = cookies.match(/weekly_stories=(\d+)/);
+  const weeklyStoriesGenerated = weeklyStoriesMatch ? parseInt(weeklyStoriesMatch[1]) : 0;
+  
+  // Antal gratis ElevenLabs-sagor baserat på tier
+  const maxElevenLabsFree = getMaxElevenLabsForTier(tier);
+  const maxWeeklyStories = getMaxWeeklyStoriesForTier(tier);
   
   return {
     tier: hasPremium ? tier : 'free',
     storiesGenerated,
     elevenLabsStoriesUsed,
-    maxElevenLabsFree
+    maxElevenLabsFree,
+    weeklyStoriesGenerated,
+    maxWeeklyStories
   };
 }
 
@@ -107,7 +152,8 @@ export function updateUserUsageStats(
 ): UserTTSInfo {
   const newStats = {
     ...currentStats,
-    storiesGenerated: currentStats.storiesGenerated + 1
+    storiesGenerated: currentStats.storiesGenerated + 1,
+    weeklyStoriesGenerated: currentStats.weeklyStoriesGenerated + 1
   };
   
   if (provider === 'elevenlabs') {
@@ -115,6 +161,45 @@ export function updateUserUsageStats(
   }
   
   return newStats;
+}
+
+/**
+ * Hämtar max antal ElevenLabs-sagor för en tier
+ */
+export function getMaxElevenLabsForTier(tier: 'free' | 'basic' | 'pro' | 'premium'): number {
+  switch (tier) {
+    case 'free': return 1;
+    case 'basic': return 2;
+    case 'pro': return 5;
+    case 'premium': return 10;
+    default: return 1;
+  }
+}
+
+/**
+ * Hämtar max antal veckosagor för en tier
+ */
+export function getMaxWeeklyStoriesForTier(tier: 'free' | 'basic' | 'pro' | 'premium'): number {
+  switch (tier) {
+    case 'free': return 5;
+    case 'basic': return 10;
+    case 'pro': return 50;
+    case 'premium': return 100;
+    default: return 5;
+  }
+}
+
+/**
+ * Hämtar max sagslängd för en tier (i minuter)
+ */
+export function getMaxStoryLengthForTier(tier: 'free' | 'basic' | 'pro' | 'premium'): { min: number; max: number } {
+  switch (tier) {
+    case 'free': return { min: 3, max: 3 };
+    case 'basic': return { min: 3, max: 5 };
+    case 'pro': return { min: 3, max: 10 };
+    case 'premium': return { min: 3, max: 12 };
+    default: return { min: 3, max: 3 };
+  }
 }
 
 /**

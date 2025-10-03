@@ -9,6 +9,8 @@ import {
   updateUserUsageStats,
   getGoogleVoiceForProvider,
   getElevenLabsVoice,
+  getMaxElevenLabsForTier,
+  getMaxWeeklyStoriesForTier,
   TTSDecision
 } from "@/utils/ttsTiers";
 
@@ -119,7 +121,10 @@ export async function POST(req: Request) {
       "X-Can-Upgrade": ttsDecision.canUpgrade.toString(),
       "X-Upgrade-Price": ttsDecision.upgradePrice.toString(),
       "X-ElevenLabs-Remaining": (userTTSInfo.maxElevenLabsFree - updatedUserInfo.elevenLabsStoriesUsed).toString(),
-      "X-Stories-Generated": updatedUserInfo.storiesGenerated.toString()
+      "X-Stories-Generated": updatedUserInfo.storiesGenerated.toString(),
+      "X-Weekly-Stories-Remaining": (userTTSInfo.maxWeeklyStories - updatedUserInfo.weeklyStoriesGenerated).toString(),
+      "X-User-Tier": userTTSInfo.tier,
+      "X-Max-Weekly-Stories": userTTSInfo.maxWeeklyStories.toString()
     };
     
     if (download) {

@@ -36,6 +36,8 @@ export default function HomePage() {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
   const [storyTheme, setStoryTheme] = useState<string>("standard");
   const [dailyUsage, setDailyUsage] = useState<number>(0);
+  const [weeklyUsage, setWeeklyUsage] = useState<number>(0);
+  const [elevenLabsUsed, setElevenLabsUsed] = useState<number>(0);
   const [generationProgress, setGenerationProgress] = useState<number>(0);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [storySeries, setStorySeries] = useState<{ id: string; title: string; chapters: number; lastStory: string } | null>(null);
@@ -60,6 +62,14 @@ export default function HomePage() {
     setTimeout(() => setToast(null), 4000);
   };
 
+  // Helper function to get week number
+  const getWeekNumber = (date: Date): string => {
+    const year = date.getFullYear();
+    const firstDayOfYear = new Date(year, 0, 1);
+    const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
+    return `${year}-${Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7)}`;
+  };
+
   // Check if premium features are required
   const premiumRequired = useMemo(() => {
     if (lengthMin > 3) return true; // Any length > 3 min requires premium
@@ -67,9 +77,26 @@ export default function HomePage() {
     return false;
   }, [lengthMin, savedCharacters.length]);
 
-  // Calculate daily limits based on premium tier
-  const getDailyLimit = () => {
-    if (!hasPremium) return 1; // Free users
+  // Calculate weekly limits based on tier
+  const getWeeklyLimit = () => {
+    if (!hasPremium) return 5; // Free users: 5 sagor per vecka
+    // Get premium tier from cookie (SSR-safe)
+    if (typeof window === 'undefined') return 100; // Default to premium tier during SSR
+    const cookie = document.cookie || "";
+    const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+    const tier = tierMatch ? tierMatch[1] : "basic";
+    
+    switch (tier) {
+      case "basic": return 10;   // Basic: 10 sagor per vecka
+      case "pro": return 50;     // Pro: 50 sagor per vecka
+      case "premium": return 100; // Premium: 100 sagor per vecka
+      default: return 10;
+    }
+  };
+
+  // Calculate ElevenLabs limits based on tier
+  const getElevenLabsLimit = () => {
+    if (!hasPremium) return 1; // Free users: 1 Magisk röst
     // Get premium tier from cookie (SSR-safe)
     if (typeof window === 'undefined') return 10; // Default to premium tier during SSR
     const cookie = document.cookie || "";
@@ -77,10 +104,27 @@ export default function HomePage() {
     const tier = tierMatch ? tierMatch[1] : "basic";
     
     switch (tier) {
-      case "basic": return 3;
-      case "plus": return 5;
-      case "premium": return 10;
-      default: return 3;
+      case "basic": return 2;    // Basic: 2 Magiska röster
+      case "pro": return 5;      // Pro: 5 Magiska röster
+      case "premium": return 10; // Premium: 10 Magiska röster
+      default: return 2;
+    }
+  };
+
+  // Calculate story length limits based on tier
+  const getStoryLengthLimits = () => {
+    if (!hasPremium) return { min: 3, max: 3 }; // Free: 3 minuter
+    // Get premium tier from cookie (SSR-safe)
+    if (typeof window === 'undefined') return { min: 3, max: 12 }; // Default to premium tier during SSR
+    const cookie = document.cookie || "";
+    const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+    const tier = tierMatch ? tierMatch[1] : "basic";
+    
+    switch (tier) {
+      case "basic": return { min: 3, max: 5 };   // Basic: 3-5 minuter
+      case "pro": return { min: 3, max: 10 };    // Pro: 3-10 minuter
+      case "premium": return { min: 3, max: 12 }; // Premium: 3-12 minuter
+      default: return { min: 3, max: 5 };
     }
   };
 
@@ -101,7 +145,9 @@ export default function HomePage() {
     }
   };
 
-  const isOverDailyLimit = dailyUsage >= getDailyLimit();
+  const isOverWeeklyLimit = dailyUsage >= getWeeklyLimit();
+  const elevenLabsLimit = getElevenLabsLimit();
+  const storyLengthLimits = getStoryLengthLimits();
 
   // Cache story for offline access
   function cacheStoryForOffline(story: { id: string; title: string; content: string; createdAt: number }) {
@@ -144,6 +190,34 @@ export default function HomePage() {
           localStorage.setItem("daily.usage", JSON.stringify({ count: 0, date: new Date().toDateString() }));
         } else {
           setDailyUsage(usage.count);
+        }
+      }
+      
+      // Load weekly usage
+      const savedWeeklyUsage = localStorage.getItem("weekly.usage");
+      if (savedWeeklyUsage) {
+        const usage = JSON.parse(savedWeeklyUsage);
+        // Reset if new week
+        const currentWeek = getWeekNumber(new Date());
+        if (usage.week !== currentWeek) {
+          setWeeklyUsage(0);
+          localStorage.setItem("weekly.usage", JSON.stringify({ count: 0, week: currentWeek }));
+        } else {
+          setWeeklyUsage(usage.count);
+        }
+      }
+      
+      // Load ElevenLabs usage
+      const savedElevenLabsUsage = localStorage.getItem("elevenlabs.usage");
+      if (savedElevenLabsUsage) {
+        const usage = JSON.parse(savedElevenLabsUsage);
+        // Reset if new week
+        const currentWeek = getWeekNumber(new Date());
+        if (usage.week !== currentWeek) {
+          setElevenLabsUsed(0);
+          localStorage.setItem("elevenlabs.usage", JSON.stringify({ count: 0, week: currentWeek }));
+        } else {
+          setElevenLabsUsed(usage.count);
         }
       }
       // read premium cookie
@@ -214,7 +288,7 @@ export default function HomePage() {
         setShowPaywall(false);
       }
       if (e.key === "Enter" && e.ctrlKey && !loading && !story) {
-        generateStory();
+        generateStory(false); // Default to standard voice
       }
     }
     document.addEventListener("keydown", handleKeyDown);
@@ -361,10 +435,28 @@ export default function HomePage() {
     }
   }
 
-  const generateStory = async () => {
+  const generateStory = async (useMagicalVoice: boolean = false) => {
     let progressInterval: NodeJS.Timeout | null = null;
     
     try {
+      // Check weekly limits
+      if (weeklyUsage >= getWeeklyLimit()) {
+        setError(`Du har nått din veckolimit på ${getWeeklyLimit()} sagor. Uppgradera för fler sagor per vecka.`);
+        return;
+      }
+      
+      // Check ElevenLabs limits if using magical voice
+      if (useMagicalVoice && elevenLabsUsed >= elevenLabsLimit) {
+        setError(`Du har använt alla dina ${elevenLabsLimit} Magiska röster för denna vecka. Använd standardröst eller uppgradera för fler Magiska röster.`);
+        return;
+      }
+      
+      // Check story length limits
+      if (lengthMin < storyLengthLimits.min || lengthMin > storyLengthLimits.max) {
+        setError(`Din nivå stöder sagor mellan ${storyLengthLimits.min}-${storyLengthLimits.max} minuter.`);
+        return;
+      }
+      
       // Check if characters or interests are empty
       const hasCharacters = characters.length > 0;
       const hasInterests = interestsTokens.accepted.length > 0;
@@ -455,11 +547,23 @@ export default function HomePage() {
           showToast("✨ Din saga är klar!", "success");
         }
         
-        // Update daily usage
-        const newUsage = dailyUsage + 1;
-        setDailyUsage(newUsage);
+        // Update usage statistics
+        const newDailyUsage = dailyUsage + 1;
+        const newWeeklyUsage = weeklyUsage + 1;
+        const newElevenLabsUsage = useMagicalVoice ? elevenLabsUsed + 1 : elevenLabsUsed;
+        
+        setDailyUsage(newDailyUsage);
+        setWeeklyUsage(newWeeklyUsage);
+        if (useMagicalVoice) {
+          setElevenLabsUsed(newElevenLabsUsage);
+        }
+        
         try {
-          localStorage.setItem("daily.usage", JSON.stringify({ count: newUsage, date: new Date().toDateString() }));
+          localStorage.setItem("daily.usage", JSON.stringify({ count: newDailyUsage, date: new Date().toDateString() }));
+          localStorage.setItem("weekly.usage", JSON.stringify({ count: newWeeklyUsage, week: getWeekNumber(new Date()) }));
+          if (useMagicalVoice) {
+            localStorage.setItem("elevenlabs.usage", JSON.stringify({ count: newElevenLabsUsage, week: getWeekNumber(new Date()) }));
+          }
         } catch {}
         
         showToast("✨ Din saga är klar!", "success");
@@ -476,9 +580,16 @@ export default function HomePage() {
     }
   };
 
-  async function tts() {
+  async function tts(useMagicalVoice: boolean = false) {
     setLoading(true);
     setError("");
+    
+    // Check ElevenLabs limits if using magical voice
+    if (useMagicalVoice && elevenLabsUsed >= elevenLabsLimit) {
+      setError(`Du har använt alla dina ${elevenLabsLimit} Magiska röster för denna vecka. Använd standardröst eller uppgradera för fler Magiska röster.`);
+      setLoading(false);
+      return;
+    }
     
     // Premium TTS is available for testing
     try {
@@ -547,8 +658,8 @@ export default function HomePage() {
             return;
           }
         }
-        // Web Speech API not available, automatically try Google TTS
-        console.log("Web Speech API not available, trying Google TTS automatically");
+        // Web Speech API not available, try TTS API
+        console.log("Web Speech API not available, trying TTS API");
         try {
           const res = await fetch("/api/tts", {
             method: "POST",
@@ -559,7 +670,8 @@ export default function HomePage() {
               rate: ttsRate,
               pitch: ttsPitch,
               volume: ttsVolume,
-              provider: "google"
+              provider: useMagicalVoice ? "elevenlabs" : "google",
+              upgradeToElevenLabs: useMagicalVoice
             })
           });
 
@@ -571,6 +683,16 @@ export default function HomePage() {
           const blob = await res.blob();
           const url = URL.createObjectURL(blob);
           setAudioUrl(url);
+          
+          // Update ElevenLabs usage if magical voice was used
+          if (useMagicalVoice) {
+            const newElevenLabsUsage = elevenLabsUsed + 1;
+            setElevenLabsUsed(newElevenLabsUsage);
+            try {
+              localStorage.setItem("elevenlabs.usage", JSON.stringify({ count: newElevenLabsUsage, week: getWeekNumber(new Date()) }));
+            } catch {}
+          }
+          
           setTimeout(() => {
             const el = document.getElementById("story-audio") as HTMLAudioElement | null;
             if (el) {
@@ -580,7 +702,7 @@ export default function HomePage() {
             }
           }, 50);
           
-          showToast("Använder Google TTS (Web Speech API inte tillgänglig)", "success");
+          showToast(useMagicalVoice ? "🎵 Magisk röst genererad!" : "🎵 Ljud genererat!", "success");
           setLoading(false);
           return;
         } catch (googleError: any) {
@@ -597,7 +719,8 @@ export default function HomePage() {
             rate: ttsRate,
             pitch: ttsPitch,
             volume: ttsVolume,
-            provider: ttsProvider
+            provider: useMagicalVoice ? "elevenlabs" : ttsProvider,
+            upgradeToElevenLabs: useMagicalVoice
           })
         });
         
@@ -609,6 +732,16 @@ export default function HomePage() {
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
+        
+        // Update ElevenLabs usage if magical voice was used
+        if (useMagicalVoice) {
+          const newElevenLabsUsage = elevenLabsUsed + 1;
+          setElevenLabsUsed(newElevenLabsUsage);
+          try {
+            localStorage.setItem("elevenlabs.usage", JSON.stringify({ count: newElevenLabsUsage, week: getWeekNumber(new Date()) }));
+          } catch {}
+        }
+        
         setTimeout(() => {
           const el = document.getElementById("story-audio") as HTMLAudioElement | null;
           if (el) {
@@ -624,7 +757,7 @@ export default function HomePage() {
           'elevenlabs': 'ElevenLabs',
           'google': 'Google Cloud TTS'
         };
-        showToast(`Använder ${providerNames[ttsProvider as keyof typeof providerNames]}`, "success");
+        showToast(useMagicalVoice ? "🎵 Magisk röst genererad!" : `Använder ${providerNames[ttsProvider as keyof typeof providerNames]}`, "success");
       }
     } catch (e: any) {
       console.error("TTS Error:", e);
@@ -931,8 +1064,14 @@ export default function HomePage() {
 
   function resetDailyUsage() {
     setDailyUsage(0);
-    localStorage.setItem("daily.usage", JSON.stringify({ count: 0, date: new Date().toDateString() }));
-    showToast("📊 Daglig användning återställd", "success");
+    setWeeklyUsage(0);
+    setElevenLabsUsed(0);
+    try {
+      localStorage.setItem("daily.usage", JSON.stringify({ count: 0, date: new Date().toDateString() }));
+      localStorage.setItem("weekly.usage", JSON.stringify({ count: 0, week: getWeekNumber(new Date()) }));
+      localStorage.setItem("elevenlabs.usage", JSON.stringify({ count: 0, week: getWeekNumber(new Date()) }));
+    } catch {}
+    showToast("📊 All användning återställd", "success");
   }
 
   function clearAllData() {
@@ -1055,7 +1194,7 @@ export default function HomePage() {
               </button>
             </div>
             <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "8px" }}>
-              Status: {hasPremium ? "✅ Premium" : "❌ Free"} | Mode: {mode === "openai" ? "🤖 OpenAI" : "🏠 Local"} | TTS: {ttsProvider === "elevenlabs" ? "👑 ElevenLabs" : "🆓 Web Speech"} | Usage: {dailyUsage}/{getDailyLimit()}
+              Status: {hasPremium ? "✅ Premium" : "❌ Free"} | Mode: {mode === "openai" ? "🤖 OpenAI" : "🏠 Local"} | TTS: {ttsProvider === "elevenlabs" ? "👑 ElevenLabs" : "🆓 Web Speech"} | Weekly: {weeklyUsage}/{getWeeklyLimit()} | Magisk: {elevenLabsUsed}/{elevenLabsLimit}
             </div>
           </div>
         )}
@@ -1307,15 +1446,18 @@ export default function HomePage() {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+          {/* Standardröst knapp */}
           <button 
             className="button" 
-            onClick={generateStory} 
-            disabled={loading}
-            aria-label="Generera en ny saga"
+            onClick={() => generateStory(false)} 
+            disabled={loading || isOverWeeklyLimit}
+            aria-label="Generera saga med standardröst"
             style={{ 
               fontSize: "16px", 
               padding: "16px 32px",
-              minWidth: "240px"
+              minWidth: "240px",
+              background: isOverWeeklyLimit ? "var(--bg-secondary)" : "var(--accent)",
+              opacity: isOverWeeklyLimit ? 0.6 : 1
             }}
           >
             {loading ? (
@@ -1339,16 +1481,62 @@ export default function HomePage() {
             ) : (
               <span style={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "center" }}>
                 <img src="/lantern.png" alt="" style={{ width: "24px", height: "24px", filter: "drop-shadow(0 2px 8px rgba(255,223,138,0.6))" }} />
-                Tänd Drömlyktan
+                Tänd Drömlyktan (Standardröst)
+              </span>
+            )}
+          </button>
+          
+          {/* Magisk röst knapp */}
+          <button 
+            className="button" 
+            onClick={() => generateStory(true)} 
+            disabled={loading || isOverWeeklyLimit || elevenLabsUsed >= elevenLabsLimit}
+            aria-label="Generera saga med magisk röst"
+            style={{ 
+              fontSize: "16px", 
+              padding: "16px 32px",
+              minWidth: "240px",
+              background: (isOverWeeklyLimit || elevenLabsUsed >= elevenLabsLimit) ? "var(--bg-secondary)" : "linear-gradient(135deg, #ff6b6b, #ffa500)",
+              opacity: (isOverWeeklyLimit || elevenLabsUsed >= elevenLabsLimit) ? 0.6 : 1,
+              border: "2px solid #ffa500"
+            }}
+          >
+            {loading ? (
+              <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ 
+                  width: "16px", 
+                  height: "16px", 
+                  border: "2px solid rgba(255,255,255,0.3)", 
+                  borderTop: "2px solid #ffa500", 
+                  borderRadius: "50%", 
+                  animation: "spin 1s linear infinite" 
+                }} />
+                <span style={{ animation: "pulse 1.5s ease-in-out infinite" }}>
+                  Skapar saga...
+                </span>
+              </span>
+            ) : storySeries ? (
+              <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                ✨ Fortsätt "{storySeries.title}" med Magisk röst (Kapitel {storySeries.chapters + 1})
+              </span>
+            ) : (
+              <span style={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "center" }}>
+                <span style={{ fontSize: "24px" }}>✨</span>
+                Tänd Drömlyktan (Magisk röst)
               </span>
             )}
           </button>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-            <span className="badge">
-              {premiumRequired ? "Premium vald" : 
-               isOverDailyLimit ? "Gräns nådd" : 
-               `Gratis (${dailyUsage}/${getDailyLimit()} idag)`}
-            </span>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+              <span className="badge">
+                {isOverWeeklyLimit ? "Veckolimit nådd" : 
+                 `${weeklyUsage}/${getWeeklyLimit()} sagor denna vecka`}
+              </span>
+              <span className="badge" style={{ background: "var(--accent-gold)", color: "var(--bg-primary)" }}>
+                {elevenLabsUsed >= elevenLabsLimit ? "Inga Magiska röster kvar" : 
+                 `${elevenLabsUsed}/${elevenLabsLimit} Magiska röster kvar`}
+              </span>
+            </div>
             {storySeries && (
               <button 
                 className="button" 
@@ -1487,7 +1675,7 @@ export default function HomePage() {
                     <button 
                       className="button" 
                       style={{ fontSize: "12px", padding: "6px 12px" }}
-                      onClick={generateStory}
+                      onClick={() => generateStory(false)}
                       disabled={loading}
                     >
                       🔄 Försök igen
@@ -1628,21 +1816,55 @@ export default function HomePage() {
                 </>
               )}
               <div className="controls">
-                <button className="button" onClick={tts} disabled={loading || !story}>
-                  {loading ? (
-                    <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ 
-                        width: "14px", 
-                        height: "14px", 
-                        border: "2px solid rgba(255,255,255,0.3)", 
-                        borderTop: "2px solid var(--accent)", 
-                        borderRadius: "50%", 
-                        animation: "spin 1s linear infinite" 
-                      }} />
-                      Skapar ljud...
-                    </span>
-                  ) : "🎵 Läs upp (TTS)"}
-                </button>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <button 
+                    className="button" 
+                    onClick={() => tts(false)} 
+                    disabled={loading || !story}
+                    style={{ fontSize: "14px", padding: "8px 16px" }}
+                  >
+                    {loading ? (
+                      <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ 
+                          width: "14px", 
+                          height: "14px", 
+                          border: "2px solid rgba(255,255,255,0.3)", 
+                          borderTop: "2px solid var(--accent)", 
+                          borderRadius: "50%", 
+                          animation: "spin 1s linear infinite" 
+                        }} />
+                        Skapar ljud...
+                      </span>
+                    ) : "🎵 Läs upp (Standardröst)"}
+                  </button>
+                  
+                  <button 
+                    className="button" 
+                    onClick={() => tts(true)} 
+                    disabled={loading || !story || elevenLabsUsed >= elevenLabsLimit}
+                    style={{ 
+                      fontSize: "14px", 
+                      padding: "8px 16px",
+                      background: elevenLabsUsed >= elevenLabsLimit ? "var(--bg-secondary)" : "linear-gradient(135deg, #ff6b6b, #ffa500)",
+                      opacity: elevenLabsUsed >= elevenLabsLimit ? 0.6 : 1,
+                      border: "2px solid #ffa500"
+                    }}
+                  >
+                    {loading ? (
+                      <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ 
+                          width: "14px", 
+                          height: "14px", 
+                          border: "2px solid rgba(255,255,255,0.3)", 
+                          borderTop: "2px solid #ffa500", 
+                          borderRadius: "50%", 
+                          animation: "spin 1s linear infinite" 
+                        }} />
+                        Skapar ljud...
+                      </span>
+                    ) : "✨ Läs upp (Magisk röst)"}
+                  </button>
+                </div>
                 <select value={ttsVoice} onChange={(e) => {
                   const voice = e.target.value;
                   if (['echo', 'fable', 'onyx', 'nova', 'shimmer'].includes(voice) && !hasPremium) {

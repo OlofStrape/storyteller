@@ -10,19 +10,24 @@ export interface RateLimitConfig {
 
 export const TIER_RATE_LIMITS: Record<string, RateLimitConfig> = {
   free: {
+    requestsPerMinute: 2,
+    requestsPerHour: 5,
+    requestsPerDay: 5  // 5 sagor per vecka
+  },
+  basic: {
     requestsPerMinute: 3,
     requestsPerHour: 10,
-    requestsPerDay: 20
+    requestsPerDay: 10  // 10 sagor per vecka
   },
-  plus: {
+  pro: {
     requestsPerMinute: 5,
     requestsPerHour: 25,
-    requestsPerDay: 100
+    requestsPerDay: 50  // 50 sagor per vecka
   },
   premium: {
     requestsPerMinute: 10,
     requestsPerHour: 60,
-    requestsPerDay: 300
+    requestsPerDay: 100  // 100 sagor per vecka
   }
 };
 
@@ -46,7 +51,7 @@ export function rateLimit(identifier: string, limit: number = 10, windowMs: numb
   return true;
 }
 
-export function tierBasedRateLimit(identifier: string, tier: 'free' | 'plus' | 'premium', window: 'minute' | 'hour' | 'day' = 'hour'): boolean {
+export function tierBasedRateLimit(identifier: string, tier: 'free' | 'basic' | 'pro' | 'premium', window: 'minute' | 'hour' | 'day' = 'hour'): boolean {
   const config = TIER_RATE_LIMITS[tier];
   if (!config) {
     // Fallback to free tier limits
@@ -87,7 +92,7 @@ export function getRateLimitInfo(identifier: string): { remaining: number; reset
   };
 }
 
-export function getTierRateLimitInfo(identifier: string, tier: 'free' | 'plus' | 'premium', window: 'minute' | 'hour' | 'day' = 'hour'): { remaining: number; resetTime: number; limit: number } | null {
+export function getTierRateLimitInfo(identifier: string, tier: 'free' | 'basic' | 'pro' | 'premium', window: 'minute' | 'hour' | 'day' = 'hour'): { remaining: number; resetTime: number; limit: number } | null {
   const config = TIER_RATE_LIMITS[tier];
   if (!config) return null;
 

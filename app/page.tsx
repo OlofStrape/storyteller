@@ -708,7 +708,9 @@ export default function HomePage() {
           }
 
           const blob = await res.blob();
+          console.log("TTS blob created (fallback), size:", blob.size, "type:", blob.type);
           const url = URL.createObjectURL(blob);
+          console.log("Audio URL created (fallback):", url);
           setAudioUrl(url);
           
           // Update ElevenLabs usage if magical voice was used
@@ -771,7 +773,9 @@ export default function HomePage() {
           throw new Error(errorData.error || "TTS misslyckades");
         }
         const blob = await res.blob();
+        console.log("TTS blob created, size:", blob.size, "type:", blob.type);
         const url = URL.createObjectURL(blob);
+        console.log("Audio URL created:", url);
         setAudioUrl(url);
         
         // Update ElevenLabs usage if magical voice was used

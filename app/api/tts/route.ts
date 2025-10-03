@@ -86,7 +86,9 @@ export async function POST(req: Request) {
       const elevenLabsVoice = getElevenLabsVoice(voice);
       
       try {
+        console.log("Generating ElevenLabs speech with voice:", elevenLabsVoice);
         buffer = await generateElevenLabsSpeech(processedText, elevenLabsVoice, elevenLabsConfig);
+        console.log("ElevenLabs speech generated successfully, buffer size:", buffer.length);
       } catch (error: any) {
         console.error("ElevenLabs Error:", error);
         return NextResponse.json({ error: error.message || "ElevenLabs TTS failed" }, { status: 500 });

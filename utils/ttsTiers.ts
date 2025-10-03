@@ -235,9 +235,9 @@ export function getGoogleVoiceForProvider(provider: 'google-wavenet' | 'google-s
 
 /**
  * Hämtar ElevenLabs voice baserat på vald röst
- * Alla magiska röster använder samma voiceID för konsistens
+ * Alla magiska röster använder samma kvinnliga voiceID för konsistens
  */
 export function getElevenLabsVoice(voice: string = 'shimmer'): string {
-  // Alla magiska röster använder samma voiceID för konsistent ljud
-  return "4Ct5uMEndw4cJ7q0Jx0l";
+  // Alla magiska röster använder samma kvinnliga voiceID för konsistent ljud
+  return "EXAVITQu4vr4xnSDxMaL"; // Bella - female, warm, soothing
 }

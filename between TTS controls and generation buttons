@@ -1,0 +1,5 @@
+[33mc7519dc[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m feat: Move all TTS controls into main card and remove icons
+[33ma20a203[m feat: Restructure TTS section with full-width layout and horizontal controls
+[33m311b73f[m feat: Improve TTS section design with modern styling
+[33m0438ec3[m feat: Integrate Sleep Mode with TTS playback and improve UX
+[33m387f4f6[m feat: Move Sleep Mode to TTS section with improved design and tier restrictions

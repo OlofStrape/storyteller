@@ -1372,7 +1372,7 @@ export default function HomePage() {
             <input
               type="range"
               min={0}
-              max={getStoryLengthLimits().max}
+              max={15}
               step={1}
               value={lengthMin}
               onChange={(e) => {

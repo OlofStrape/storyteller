@@ -107,6 +107,23 @@ export default function HomePage() {
     return `${year}-${Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7)}`;
   };
 
+  // Calculate story length limits based on tier
+  const getStoryLengthLimits = () => {
+    if (!hasPremium) return { min: 0, max: 3 }; // Free: 0-3 minuter
+    // Get premium tier from cookie (SSR-safe)
+    if (typeof window === 'undefined') return { min: 0, max: 12 }; // Default to premium tier during SSR
+    const cookie = document.cookie || "";
+    const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+    const tier = tierMatch ? tierMatch[1] : "basic";
+    
+    switch (tier) {
+      case "basic": return { min: 0, max: 5 };   // Basic: 0-5 minuter
+      case "pro": return { min: 0, max: 10 };    // Pro: 0-10 minuter
+      case "premium": return { min: 0, max: 12 }; // Premium: 0-12 minuter
+      default: return { min: 0, max: 3 };
+    }
+  };
+
   // Check if premium features are required
   const premiumRequired = useMemo(() => {
     const lengthLimits = getStoryLengthLimits();
@@ -146,23 +163,6 @@ export default function HomePage() {
       case "pro": return 5;      // Pro: 5 Magiska röster
       case "premium": return 10; // Premium: 10 Magiska röster
       default: return 2;
-    }
-  };
-
-  // Calculate story length limits based on tier
-  const getStoryLengthLimits = () => {
-    if (!hasPremium) return { min: 0, max: 3 }; // Free: 0-3 minuter
-    // Get premium tier from cookie (SSR-safe)
-    if (typeof window === 'undefined') return { min: 0, max: 12 }; // Default to premium tier during SSR
-    const cookie = document.cookie || "";
-    const tierMatch = cookie.match(/premium_tier=([^;]+)/);
-    const tier = tierMatch ? tierMatch[1] : "basic";
-    
-    switch (tier) {
-      case "basic": return { min: 0, max: 5 };   // Basic: 0-5 minuter
-      case "pro": return { min: 0, max: 10 };    // Pro: 0-10 minuter
-      case "premium": return { min: 0, max: 12 }; // Premium: 0-12 minuter
-      default: return { min: 0, max: 3 };
     }
   };
 

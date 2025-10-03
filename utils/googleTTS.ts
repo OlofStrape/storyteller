@@ -71,9 +71,6 @@ export async function generateGoogleTTS(
     .replace(/\.\.\./g, '... ') // Add space after ellipsis
     .replace(/([.!?])\s*([A-ZÅÄÖ])/g, '$1 $2') // Ensure space after sentence end
     .replace(/,\s*/g, ', ') // Space after comma
-    .replace(/([a-zåäö])([A-ZÅÄÖ])/g, '$1. $2') // Add pause between sentences
-    .replace(/\s+/g, ' ') // Normalize whitespace
-    .replace(/([.!?])\s*$/g, '$1') // Remove trailing space
     .trim();
 
   const requestBody = {
@@ -86,10 +83,9 @@ export async function generateGoogleTTS(
     },
     audioConfig: {
       audioEncoding: "MP3",
-      speakingRate: Math.max(0.7, Math.min(1.2, rate)), // Bättre range för naturligt tal
-      pitch: 0, // Behåll neutral pitch
-      volumeGainDb: 2.0, // Lätt högre volym
-      effectsProfileId: ["telephony-class-application"] // Förbättrar kvalitet
+      speakingRate: Math.max(0.25, Math.min(4.0, rate)),
+      pitch: 0,
+      volumeGainDb: 0
     }
   };
 

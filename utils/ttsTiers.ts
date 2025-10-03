@@ -235,16 +235,9 @@ export function getGoogleVoiceForProvider(provider: 'google-wavenet' | 'google-s
 
 /**
  * Hämtar ElevenLabs voice baserat på vald röst
+ * Alla magiska röster använder samma voiceID för konsistens
  */
 export function getElevenLabsVoice(voice: string = 'shimmer'): string {
-  const voiceMap: Record<string, string> = {
-    "shimmer": "4Ct5uMEndw4cJ7q0Jx0l", // Swedish voice 1 - Soft & warm
-    "nova": "kkwvaJeTPw4KK0sBdyvD",    // Swedish voice 2 - Young & gentle
-    "echo": "aSLKtNoVBZlxQEMsnGL2",    // Swedish voice 3 - Natural & calm
-    "alloy": "4Ct5uMEndw4cJ7q0Jx0l",   // Default to voice 1
-    "fable": "aSLKtNoVBZlxQEMsnGL2",   // Natural storytelling
-    "onyx": "aSLKtNoVBZlxQEMsnGL2"     // Deep & soothing
-  };
-  
-  return voiceMap[voice] || "4Ct5uMEndw4cJ7q0Jx0l";
+  // Alla magiska röster använder samma voiceID för konsistent ljud
+  return "4Ct5uMEndw4cJ7q0Jx0l";
 }

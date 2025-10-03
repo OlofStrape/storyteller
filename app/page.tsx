@@ -445,11 +445,7 @@ export default function HomePage() {
         return;
       }
       
-      // Check ElevenLabs limits if using magical voice
-      if (useMagicalVoice && elevenLabsUsed >= elevenLabsLimit) {
-        setError(`Du har använt alla dina ${elevenLabsLimit} Magiska röster för denna vecka. Använd standardröst eller uppgradera för fler Magiska röster.`);
-        return;
-      }
+      // Note: ElevenLabs limits are checked in TTS step, not story generation
       
       // Check story length limits
       if (lengthMin < storyLengthLimits.min || lengthMin > storyLengthLimits.max) {
@@ -547,23 +543,16 @@ export default function HomePage() {
           showToast("✨ Din saga är klar!", "success");
         }
         
-        // Update usage statistics
+        // Update usage statistics (only story generation, not TTS)
         const newDailyUsage = dailyUsage + 1;
         const newWeeklyUsage = weeklyUsage + 1;
-        const newElevenLabsUsage = useMagicalVoice ? elevenLabsUsed + 1 : elevenLabsUsed;
         
         setDailyUsage(newDailyUsage);
         setWeeklyUsage(newWeeklyUsage);
-        if (useMagicalVoice) {
-          setElevenLabsUsed(newElevenLabsUsage);
-        }
         
         try {
           localStorage.setItem("daily.usage", JSON.stringify({ count: newDailyUsage, date: new Date().toDateString() }));
           localStorage.setItem("weekly.usage", JSON.stringify({ count: newWeeklyUsage, week: getWeekNumber(new Date()) }));
-          if (useMagicalVoice) {
-            localStorage.setItem("elevenlabs.usage", JSON.stringify({ count: newElevenLabsUsage, week: getWeekNumber(new Date()) }));
-          }
         } catch {}
         
         showToast("✨ Din saga är klar!", "success");
@@ -1446,12 +1435,12 @@ export default function HomePage() {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
-          {/* Standardröst knapp */}
+          {/* Enkel saga-genereringsknapp */}
           <button 
             className="button" 
             onClick={() => generateStory(false)} 
             disabled={loading || isOverWeeklyLimit}
-            aria-label="Generera saga med standardröst"
+            aria-label="Generera saga"
             style={{ 
               fontSize: "16px", 
               padding: "16px 32px",
@@ -1481,62 +1470,15 @@ export default function HomePage() {
             ) : (
               <span style={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "center" }}>
                 <img src="/lantern.png" alt="" style={{ width: "24px", height: "24px", filter: "drop-shadow(0 2px 8px rgba(255,223,138,0.6))" }} />
-                Tänd Drömlyktan (Standardröst)
-              </span>
-            )}
-          </button>
-          
-          {/* Magisk röst knapp */}
-          <button 
-            className="button" 
-            onClick={() => generateStory(true)} 
-            disabled={loading || isOverWeeklyLimit || elevenLabsUsed >= elevenLabsLimit}
-            aria-label="Generera saga med magisk röst"
-            style={{ 
-              fontSize: "16px", 
-              padding: "16px 32px",
-              minWidth: "240px",
-              background: (isOverWeeklyLimit || elevenLabsUsed >= elevenLabsLimit) ? "var(--bg-secondary)" : "linear-gradient(135deg, #ff6b6b, #ffa500)",
-              opacity: (isOverWeeklyLimit || elevenLabsUsed >= elevenLabsLimit) ? 0.6 : 1,
-              border: "2px solid #ffa500"
-            }}
-          >
-            {loading ? (
-              <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ 
-                  width: "16px", 
-                  height: "16px", 
-                  border: "2px solid rgba(255,255,255,0.3)", 
-                  borderTop: "2px solid #ffa500", 
-                  borderRadius: "50%", 
-                  animation: "spin 1s linear infinite" 
-                }} />
-                <span style={{ animation: "pulse 1.5s ease-in-out infinite" }}>
-                  Skapar saga...
-                </span>
-              </span>
-            ) : storySeries ? (
-              <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                ✨ Fortsätt "{storySeries.title}" med Magisk röst (Kapitel {storySeries.chapters + 1})
-              </span>
-            ) : (
-              <span style={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "center" }}>
-                <span style={{ fontSize: "24px" }}>✨</span>
-                Tänd Drömlyktan (Magisk röst)
+                Tänd Drömlyktan
               </span>
             )}
           </button>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
-              <span className="badge">
-                {isOverWeeklyLimit ? "Veckolimit nådd" : 
-                 `${weeklyUsage}/${getWeeklyLimit()} sagor denna vecka`}
-              </span>
-              <span className="badge" style={{ background: "var(--accent-gold)", color: "var(--bg-primary)" }}>
-                {elevenLabsUsed >= elevenLabsLimit ? "Inga Magiska röster kvar" : 
-                 `${elevenLabsUsed}/${elevenLabsLimit} Magiska röster kvar`}
-              </span>
-            </div>
+            <span className="badge">
+              {isOverWeeklyLimit ? "Veckolimit nådd" : 
+               `${weeklyUsage}/${getWeeklyLimit()} sagor denna vecka`}
+            </span>
             {storySeries && (
               <button 
                 className="button" 
@@ -1816,54 +1758,103 @@ export default function HomePage() {
                 </>
               )}
               <div className="controls">
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <button 
-                    className="button" 
-                    onClick={() => tts(false)} 
-                    disabled={loading || !story}
-                    style={{ fontSize: "14px", padding: "8px 16px" }}
-                  >
-                    {loading ? (
-                      <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ 
-                          width: "14px", 
-                          height: "14px", 
-                          border: "2px solid rgba(255,255,255,0.3)", 
-                          borderTop: "2px solid var(--accent)", 
-                          borderRadius: "50%", 
-                          animation: "spin 1s linear infinite" 
-                        }} />
-                        Skapar ljud...
-                      </span>
-                    ) : "🎵 Läs upp (Standardröst)"}
-                  </button>
+                <div style={{ 
+                  background: "rgba(255,255,255,0.05)", 
+                  border: "1px solid rgba(255,255,255,0.1)", 
+                  borderRadius: "12px", 
+                  padding: "16px",
+                  marginBottom: "16px"
+                }}>
+                  <h3 style={{ margin: "0 0 12px 0", fontSize: "16px", color: "var(--accent)" }}>
+                    🎵 Välj hur du vill lyssna på sagan
+                  </h3>
                   
-                  <button 
-                    className="button" 
-                    onClick={() => tts(true)} 
-                    disabled={loading || !story || elevenLabsUsed >= elevenLabsLimit}
-                    style={{ 
-                      fontSize: "14px", 
-                      padding: "8px 16px",
-                      background: elevenLabsUsed >= elevenLabsLimit ? "var(--bg-secondary)" : "linear-gradient(135deg, #ff6b6b, #ffa500)",
-                      opacity: elevenLabsUsed >= elevenLabsLimit ? 0.6 : 1,
-                      border: "2px solid #ffa500"
-                    }}
-                  >
-                    {loading ? (
-                      <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ 
-                          width: "14px", 
-                          height: "14px", 
-                          border: "2px solid rgba(255,255,255,0.3)", 
-                          borderTop: "2px solid #ffa500", 
-                          borderRadius: "50%", 
-                          animation: "spin 1s linear infinite" 
-                        }} />
-                        Skapar ljud...
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    <button 
+                      className="button" 
+                      onClick={() => tts(false)} 
+                      disabled={loading || !story}
+                      style={{ 
+                        fontSize: "16px", 
+                        padding: "12px 20px",
+                        background: "var(--accent)",
+                        border: "2px solid var(--accent)"
+                      }}
+                    >
+                      {loading ? (
+                        <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={{ 
+                            width: "16px", 
+                            height: "16px", 
+                            border: "2px solid rgba(255,255,255,0.3)", 
+                            borderTop: "2px solid var(--accent)", 
+                            borderRadius: "50%", 
+                            animation: "spin 1s linear infinite" 
+                          }} />
+                          Skapar ljud...
+                        </span>
+                      ) : (
+                        <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          🎵 Standardröst (Google TTS)
+                        </span>
+                      )}
+                    </button>
+                    
+                    <button 
+                      className="button" 
+                      onClick={() => tts(true)} 
+                      disabled={loading || !story || elevenLabsUsed >= elevenLabsLimit}
+                      style={{ 
+                        fontSize: "16px", 
+                        padding: "12px 20px",
+                        background: elevenLabsUsed >= elevenLabsLimit ? "var(--bg-secondary)" : "linear-gradient(135deg, #ff6b6b, #ffa500)",
+                        opacity: elevenLabsUsed >= elevenLabsLimit ? 0.6 : 1,
+                        border: "2px solid #ffa500"
+                      }}
+                    >
+                      {loading ? (
+                        <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={{ 
+                            width: "16px", 
+                            height: "16px", 
+                            border: "2px solid rgba(255,255,255,0.3)", 
+                            borderTop: "2px solid #ffa500", 
+                            borderRadius: "50%", 
+                            animation: "spin 1s linear infinite" 
+                          }} />
+                          Skapar ljud...
+                        </span>
+                      ) : (
+                        <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          ✨ Magisk röst (ElevenLabs)
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                  
+                  <div style={{ 
+                    marginTop: "12px", 
+                    padding: "8px 12px", 
+                    background: "rgba(255,165,0,0.1)", 
+                    border: "1px solid rgba(255,165,0,0.3)", 
+                    borderRadius: "8px",
+                    fontSize: "14px"
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span>✨ Magiska röster kvar:</span>
+                      <span style={{ 
+                        fontWeight: "bold", 
+                        color: elevenLabsUsed >= elevenLabsLimit ? "#ff6b6b" : "#ffa500" 
+                      }}>
+                        {elevenLabsUsed >= elevenLabsLimit ? "Inga kvar" : `${elevenLabsLimit - elevenLabsUsed} av ${elevenLabsLimit}`}
                       </span>
-                    ) : "✨ Läs upp (Magisk röst)"}
-                  </button>
+                    </div>
+                    {elevenLabsUsed >= elevenLabsLimit && (
+                      <div style={{ fontSize: "12px", color: "#ff6b6b", marginTop: "4px" }}>
+                        Uppgradera för fler Magiska röster
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <select value={ttsVoice} onChange={(e) => {
                   const voice = e.target.value;
@@ -2158,6 +2149,26 @@ export default function HomePage() {
             <p className="modal-sub">Alltid gratis 3-minuters sagor. Lås upp mer med Premium.</p>
 
             <div style={{ display: "grid", gap: 12 }}>
+              {/* Free tier - always visible */}
+              <div style={{ padding: 12, borderRadius: 12, border: "1px solid rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.02)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <strong>Gratis</strong>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: "14px", color: "var(--accent-gold)" }}>0 kr/mån</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>Alltid gratis</div>
+                  </div>
+                </div>
+                <ul style={{ margin: "8px 0 0 16px" }}>
+                  <li>3 minuters sagor</li>
+                  <li>5 sagor per vecka</li>
+                  <li>1 Magisk röst per vecka</li>
+                  <li>Standardröst (Google TTS)</li>
+                </ul>
+                <div style={{ marginTop: "12px", padding: "8px 12px", background: "rgba(255,165,0,0.1)", borderRadius: "8px", fontSize: "14px", textAlign: "center" }}>
+                  Du använder redan denna plan
+                </div>
+              </div>
+
               <div style={{ padding: 12, borderRadius: 12, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <strong>Basic</strong>
@@ -2167,10 +2178,11 @@ export default function HomePage() {
                   </div>
                 </div>
                 <ul style={{ margin: "8px 0 0 16px" }}>
-                  <li>3-8 min sagor</li>
-                  <li>3 sagor/dag</li>
-                  <li>1 sparad karaktär</li>
-                  <li>Standard-röster</li>
+                  <li>3-5 minuters sagor</li>
+                  <li>10 sagor per vecka</li>
+                  <li>2 Magiska röster per vecka</li>
+                  <li>Standardröst (Google TTS)</li>
+                  <li>Sleep-timer & white noise</li>
                 </ul>
                 <div className="modal-actions" style={{ justifyContent: "space-between" }}>
                   <button className="button" onClick={async () => {
@@ -2208,22 +2220,21 @@ export default function HomePage() {
 
               <div style={{ padding: 12, borderRadius: 12, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <strong>Plus</strong>
+                  <strong>Pro</strong>
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>39 kr/mån</div>
-                    <div style={{ fontSize: "12px", color: "var(--accent-gold)" }}>399 kr/år (2 mån gratis)</div>
+                    <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>59 kr/mån</div>
+                    <div style={{ fontSize: "12px", color: "var(--accent-gold)" }}>599 kr/år (2 mån gratis)</div>
                   </div>
                 </div>
                 <ul style={{ margin: "8px 0 0 16px" }}>
                   <li>Allt i Basic</li>
-                  <li>3-10 min sagor</li>
-                  <li>5 sagor/dag</li>
-                  <li>Sleep Mode</li>
+                  <li>3-10 minuters sagor</li>
+                  <li>50 sagor per vecka</li>
+                  <li>5 Magiska röster per vecka</li>
+                  <li>Sleep-timer & white noise</li>
                   <li>Obegränsade karaktärer</li>
-                  <li>Premium-röster (OpenAI HD, Azure Svenska, ElevenLabs AI)</li>
                   <li>Sagoteman</li>
                   <li>📄 Export som PDF/TXT</li>
-                  <li>⏰ Sleep Timer</li>
                   <li>🎵 Avancerade röstkontroller</li>
                 </ul>
                 <div className="modal-actions" style={{ justifyContent: "space-between" }}>
@@ -2232,7 +2243,7 @@ export default function HomePage() {
                       const res = await fetch("/api/checkout", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ tier: "plus", period: "yearly" })
+                        body: JSON.stringify({ tier: "pro", period: "yearly" })
                       });
                       const data = await res.json();
                       if (data.url) {
@@ -2241,13 +2252,13 @@ export default function HomePage() {
                     } catch (error) {
                       showToast("Kunde inte starta betalning", "error");
                     }
-                  }}>Årsplan (399 kr)</button>
+                  }}>Årsplan (599 kr)</button>
                   <button className="button" onClick={async () => {
                     try {
                       const res = await fetch("/api/checkout", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ tier: "plus", period: "monthly" })
+                        body: JSON.stringify({ tier: "pro", period: "monthly" })
                       });
                       const data = await res.json();
                       if (data.url) {
@@ -2256,7 +2267,7 @@ export default function HomePage() {
                     } catch (error) {
                       showToast("Kunde inte starta betalning", "error");
                     }
-                  }}>Månadsplan (39 kr)</button>
+                  }}>Månadsplan (59 kr)</button>
                 </div>
               </div>
 
@@ -2264,16 +2275,16 @@ export default function HomePage() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <strong>Premium</strong>
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>79 kr/mån</div>
-                    <div style={{ fontSize: "12px", color: "var(--accent-gold)" }}>799 kr/år (2 mån gratis)</div>
+                    <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>99 kr/mån</div>
+                    <div style={{ fontSize: "12px", color: "var(--accent-gold)" }}>999 kr/år (2 mån gratis)</div>
                   </div>
                 </div>
                 <ul style={{ margin: "8px 0 0 16px" }}>
-                  <li>Allt i Plus</li>
-                  <li>3-15 min sagor</li>
-                  <li>10 sagor/dag</li>
+                  <li>Allt i Pro</li>
+                  <li>3-12 minuters sagor</li>
+                  <li>100 sagor per vecka</li>
+                  <li>10 Magiska röster per vecka</li>
                   <li>Kapitel-serie (flera kapitel)</li>
-                  <li>Rabatt på böcker</li>
                   <li>Familjeprofil</li>
                   <li>📄 Export som PDF/TXT</li>
                   <li>⏰ Sleep Timer</li>
@@ -2294,7 +2305,7 @@ export default function HomePage() {
                     } catch (error) {
                       showToast("Kunde inte starta betalning", "error");
                     }
-                  }}>Årsplan (799 kr)</button>
+                  }}>Årsplan (999 kr)</button>
                   <button className="button" onClick={async () => {
                     try {
                       const res = await fetch("/api/checkout", {
@@ -2309,7 +2320,7 @@ export default function HomePage() {
                     } catch (error) {
                       showToast("Kunde inte starta betalning", "error");
                     }
-                  }}>Månadsplan (79 kr)</button>
+                  }}>Månadsplan (99 kr)</button>
                 </div>
               </div>
             </div>

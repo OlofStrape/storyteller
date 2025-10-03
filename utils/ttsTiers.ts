@@ -11,7 +11,7 @@ export interface UserTTSInfo {
 }
 
 export interface TTSDecision {
-  provider: 'elevenlabs' | 'google-wavenet' | 'google-standard';
+  provider: 'elevenlabs' | 'google-wavenet' | 'google-standard' | 'openai';
   reason: string;
   canUpgrade: boolean;
   upgradePrice: number;
@@ -148,7 +148,7 @@ export function getUserTTSInfoFromCookies(cookieHeader: string): UserTTSInfo {
  */
 export function updateUserUsageStats(
   currentStats: UserTTSInfo, 
-  provider: 'elevenlabs' | 'google-wavenet' | 'google-standard'
+  provider: 'elevenlabs' | 'google-wavenet' | 'google-standard' | 'openai'
 ): UserTTSInfo {
   const newStats = {
     ...currentStats,

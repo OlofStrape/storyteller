@@ -607,7 +607,7 @@ export default function HomePage() {
     }
   };
 
-  async function tts(useMagicalVoice: boolean = false) {
+  async function tts(useMagicalVoice: boolean = false, provider: string = "auto") {
     setLoading(true);
     setError("");
     
@@ -697,7 +697,7 @@ export default function HomePage() {
               rate: ttsRate,
               pitch: ttsPitch,
               volume: ttsVolume,
-              provider: useMagicalVoice ? "elevenlabs" : "google",
+              provider: provider !== "auto" ? provider : (useMagicalVoice ? "elevenlabs" : "google"),
               upgradeToElevenLabs: useMagicalVoice
             })
           });
@@ -762,7 +762,7 @@ export default function HomePage() {
             rate: ttsRate,
             pitch: ttsPitch,
             volume: ttsVolume,
-            provider: useMagicalVoice ? "elevenlabs" : ttsProvider,
+            provider: provider !== "auto" ? provider : (useMagicalVoice ? "elevenlabs" : ttsProvider),
             upgradeToElevenLabs: useMagicalVoice
           })
         });
@@ -2223,6 +2223,41 @@ export default function HomePage() {
                         <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                           <img src="/lantern.png" alt="Lykt" style={{ width: "20px", height: "20px" }} />
                           Magisk röst
+                        </span>
+                      )}
+                    </button>
+                    
+                    <button 
+                      className="button" 
+                      onClick={() => tts(false, "openai")} 
+                      disabled={loading || !story}
+                      style={{ 
+                        fontSize: "16px", 
+                        padding: "18px 28px",
+                        background: "linear-gradient(135deg, #10a37f, #1a7f64)",
+                        border: "2px solid #10a37f",
+                        borderRadius: "12px",
+                        transition: "all 0.3s ease",
+                        transform: "translateY(0)",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+                      }}
+                    >
+                      {loading ? (
+                        <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={{ 
+                            width: "16px", 
+                            height: "16px", 
+                            border: "2px solid rgba(255,255,255,0.3)", 
+                            borderTop: "2px solid #10a37f", 
+                            borderRadius: "50%", 
+                            animation: "spin 1s linear infinite" 
+                          }} />
+                          Skapar ljud...
+                        </span>
+                      ) : (
+                        <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={{ fontSize: "20px" }}>🤖</span>
+                          OpenAI TTS
                         </span>
                       )}
                     </button>

@@ -3,6 +3,7 @@ import { openai, ensureEnv } from "@/utils/openai";
 import { generateAzureSpeech } from "@/utils/azureSpeech";
 import { generateElevenLabsSpeech } from "@/utils/elevenLabs";
 import { generateGoogleTTS } from "@/utils/googleTTS";
+import { generateOpenAITTS } from "@/utils/openaiTTS";
 import { 
   getUserTTSInfoFromCookies, 
   determineTTSProvider, 
@@ -38,14 +39,16 @@ export async function POST(req: Request) {
     // Determine which TTS provider to use
     if (provider !== "auto") {
       // User specified a provider manually (for testing/development)
-      let mappedProvider: 'elevenlabs' | 'google-wavenet' | 'google-standard';
+      let mappedProvider: 'elevenlabs' | 'google-wavenet' | 'google-standard' | 'openai';
       
       if (provider === "google") {
         mappedProvider = "google-wavenet"; // Default to high-quality Google TTS
       } else if (provider === "elevenlabs") {
         mappedProvider = "elevenlabs";
+      } else if (provider === "openai") {
+        mappedProvider = "openai";
       } else {
-        mappedProvider = provider as 'elevenlabs' | 'google-wavenet' | 'google-standard';
+        mappedProvider = provider as 'elevenlabs' | 'google-wavenet' | 'google-standard' | 'openai';
       }
       
       ttsDecision = {
@@ -106,6 +109,23 @@ export async function POST(req: Request) {
       } catch (error: any) {
         console.error("Google TTS Error:", error);
         return NextResponse.json({ error: error.message || "Google TTS failed" }, { status: 500 });
+      }
+    } else if (ttsDecision.provider === "openai") {
+      // OpenAI TTS - High quality voices
+      if (!process.env.OPENAI_API_KEY) {
+        return NextResponse.json({ error: "OpenAI TTS not configured" }, { status: 501 });
+      }
+      
+      try {
+        console.log("Generating OpenAI TTS with voice:", voice);
+        const openaiConfig = {
+          apiKey: process.env.OPENAI_API_KEY
+        };
+        buffer = await generateOpenAITTS(processedText, voice, openaiConfig);
+        console.log("OpenAI TTS generated successfully, buffer size:", buffer.length);
+      } catch (error: any) {
+        console.error("OpenAI TTS Error:", error);
+        return NextResponse.json({ error: error.message || "OpenAI TTS failed" }, { status: 500 });
       }
     } else {
       return NextResponse.json({ error: "Unknown TTS provider" }, { status: 400 });

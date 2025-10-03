@@ -194,11 +194,11 @@ export function getMaxWeeklyStoriesForTier(tier: 'free' | 'basic' | 'pro' | 'pre
  */
 export function getMaxStoryLengthForTier(tier: 'free' | 'basic' | 'pro' | 'premium'): { min: number; max: number } {
   switch (tier) {
-    case 'free': return { min: 3, max: 3 };
-    case 'basic': return { min: 3, max: 5 };
-    case 'pro': return { min: 3, max: 10 };
-    case 'premium': return { min: 3, max: 12 };
-    default: return { min: 3, max: 3 };
+    case 'free': return { min: 0, max: 3 };
+    case 'basic': return { min: 0, max: 5 };
+    case 'pro': return { min: 0, max: 10 };
+    case 'premium': return { min: 0, max: 12 };
+    default: return { min: 0, max: 3 };
   }
 }
 

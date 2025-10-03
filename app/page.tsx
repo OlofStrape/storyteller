@@ -109,7 +109,8 @@ export default function HomePage() {
 
   // Check if premium features are required
   const premiumRequired = useMemo(() => {
-    if (lengthMin > 3) return true; // Any length > 3 min requires premium
+    const lengthLimits = getStoryLengthLimits();
+    if (lengthMin > lengthLimits.max) return true; // Length exceeds tier limit requires premium
     if (savedCharacters.length > 0) return true; // Saved characters require premium
     return false;
   }, [lengthMin, savedCharacters.length]);
@@ -150,18 +151,18 @@ export default function HomePage() {
 
   // Calculate story length limits based on tier
   const getStoryLengthLimits = () => {
-    if (!hasPremium) return { min: 3, max: 3 }; // Free: 3 minuter
+    if (!hasPremium) return { min: 0, max: 3 }; // Free: 0-3 minuter
     // Get premium tier from cookie (SSR-safe)
-    if (typeof window === 'undefined') return { min: 3, max: 12 }; // Default to premium tier during SSR
+    if (typeof window === 'undefined') return { min: 0, max: 12 }; // Default to premium tier during SSR
     const cookie = document.cookie || "";
     const tierMatch = cookie.match(/premium_tier=([^;]+)/);
     const tier = tierMatch ? tierMatch[1] : "basic";
     
     switch (tier) {
-      case "basic": return { min: 3, max: 5 };   // Basic: 3-5 minuter
-      case "pro": return { min: 3, max: 10 };    // Pro: 3-10 minuter
-      case "premium": return { min: 3, max: 12 }; // Premium: 3-12 minuter
-      default: return { min: 3, max: 5 };
+      case "basic": return { min: 0, max: 5 };   // Basic: 0-5 minuter
+      case "pro": return { min: 0, max: 10 };    // Pro: 0-10 minuter
+      case "premium": return { min: 0, max: 12 }; // Premium: 0-12 minuter
+      default: return { min: 0, max: 3 };
     }
   };
 
@@ -1363,18 +1364,19 @@ export default function HomePage() {
             />
           </div>
           <div>
-            <label style={{ textAlign: "center" }}>Längd ({lengthMin} min) {lengthMin > 3 && <span className="badge">🔒 Premium</span>}</label>
+            <label style={{ textAlign: "center" }}>Längd ({lengthMin} min) {premiumRequired && <span className="badge">🔒 Premium</span>}</label>
             <input
               type="range"
               min={0}
-              max={15}
+              max={getStoryLengthLimits().max}
               step={1}
               value={lengthMin}
               onChange={(e) => {
                 const v = parseInt(e.target.value);
-                if (v > 3 && !hasPremium) {
+                const lengthLimits = getStoryLengthLimits();
+                if (v > lengthLimits.max) {
                   setShowPaywall(true);
-                  setLengthMin(3);
+                  setLengthMin(lengthLimits.max);
                 } else {
                   setLengthMin(v);
                 }

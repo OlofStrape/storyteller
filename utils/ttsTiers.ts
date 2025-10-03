@@ -239,5 +239,5 @@ export function getGoogleVoiceForProvider(provider: 'google-wavenet' | 'google-s
  */
 export function getElevenLabsVoice(voice: string = 'shimmer'): string {
   // Alla magiska röster använder samma kvinnliga voiceID för konsistent ljud
-  return "4Ct5uMEndw4cJ7q0Jx0l"; // Elin - female voice
+  return "21m00Tcm4TlvDq8ikWAM"; // Rachel - female, clear, professional
 }

@@ -1788,26 +1788,39 @@ export default function HomePage() {
                 <div style={{ 
                   background: "rgba(255,255,255,0.05)", 
                   border: "1px solid rgba(255,255,255,0.1)", 
-                  borderRadius: "12px", 
-                  padding: "16px",
-                  marginBottom: "16px"
+                  borderRadius: "16px", 
+                  padding: "20px",
+                  marginBottom: "20px",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
                 }}>
-                  <h3 style={{ margin: "0 0 12px 0", fontSize: "16px", color: "var(--accent)" }}>
+                  <h3 style={{ 
+                    margin: "0 0 16px 0", 
+                    fontSize: "18px", 
+                    color: "var(--accent)",
+                    textAlign: "center",
+                    fontWeight: "600"
+                  }}>
                     🎵 Välj hur du vill lyssna på sagan
                   </h3>
                   
-                  <div style={{ display: "flex", flexDirection: "row", gap: "12px", flexWrap: "wrap" }}>
+                  <div style={{ 
+                    display: "grid", 
+                    gridTemplateColumns: "1fr 1fr", 
+                    gap: "16px"
+                  }}>
                     <button 
                       className="button" 
                       onClick={() => tts(false)} 
                       disabled={loading || !story}
                       style={{ 
                         fontSize: "16px", 
-                        padding: "12px 20px",
+                        padding: "16px 24px",
                         background: "var(--accent)",
                         border: "2px solid var(--accent)",
-                        flex: "1",
-                        minWidth: "200px"
+                        borderRadius: "12px",
+                        transition: "all 0.3s ease",
+                        transform: "translateY(0)",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
                       }}
                     >
                       {loading ? (
@@ -1835,12 +1848,14 @@ export default function HomePage() {
                       disabled={loading || !story || elevenLabsUsed >= elevenLabsLimit}
                       style={{ 
                         fontSize: "16px", 
-                        padding: "12px 20px",
+                        padding: "16px 24px",
                         background: elevenLabsUsed >= elevenLabsLimit ? "var(--bg-secondary)" : "linear-gradient(135deg, #ff6b6b, #ffa500)",
                         opacity: elevenLabsUsed >= elevenLabsLimit ? 0.6 : 1,
                         border: "2px solid #ffa500",
-                        flex: "1",
-                        minWidth: "200px"
+                        borderRadius: "12px",
+                        transition: "all 0.3s ease",
+                        transform: "translateY(0)",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
                       }}
                     >
                       {loading ? (

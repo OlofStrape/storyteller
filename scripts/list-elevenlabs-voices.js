@@ -1,7 +1,15 @@
 // Script to list all available ElevenLabs voices
 // Usage: node scripts/list-elevenlabs-voices.js
 
-require('dotenv').config({ path: '.env.local' });
+import dotenv from 'dotenv';
+import fs from 'fs';
+
+// Try to load from .env.local first, then .env
+if (fs.existsSync('.env.local')) {
+  dotenv.config({ path: '.env.local' });
+} else if (fs.existsSync('.env')) {
+  dotenv.config({ path: '.env' });
+}
 
 const apiKey = process.env.ELEVENLABS_API_KEY;
 

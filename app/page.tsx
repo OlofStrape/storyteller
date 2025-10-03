@@ -688,6 +688,20 @@ export default function HomePage() {
               el.playbackRate = ttsRate;
               el.play().catch(() => {});
               setAudioEl(el);
+              
+              // Auto-start sleep mode after story ends if enabled and user has access
+              el.addEventListener('ended', () => {
+                // Check if user has Pro or Premium tier for sleep mode
+                if (hasPremium) {
+                  const cookie = document.cookie || "";
+                  const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                  const tier = tierMatch ? tierMatch[1] : "basic";
+                  
+                  if (tier === "pro" || tier === "premium") {
+                    startSleepMode();
+                  }
+                }
+              });
             }
           }, 50);
           
@@ -737,6 +751,20 @@ export default function HomePage() {
             el.playbackRate = ttsRate;
             el.play().catch(() => {});
             setAudioEl(el);
+            
+            // Auto-start sleep mode after story ends if enabled and user has access
+            el.addEventListener('ended', () => {
+              // Check if user has Pro or Premium tier for sleep mode
+              if (hasPremium) {
+                const cookie = document.cookie || "";
+                const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                const tier = tierMatch ? tierMatch[1] : "basic";
+                
+                if (tier === "pro" || tier === "premium") {
+                  startSleepMode();
+                }
+              }
+            });
           }
         }, 50);
         
@@ -783,6 +811,20 @@ export default function HomePage() {
               el.playbackRate = ttsRate;
               el.play().catch(() => {});
               setAudioEl(el);
+              
+              // Auto-start sleep mode after story ends if enabled and user has access
+              el.addEventListener('ended', () => {
+                // Check if user has Pro or Premium tier for sleep mode
+                if (hasPremium) {
+                  const cookie = document.cookie || "";
+                  const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                  const tier = tierMatch ? tierMatch[1] : "basic";
+                  
+                  if (tier === "pro" || tier === "premium") {
+                    startSleepMode();
+                  }
+                }
+              });
             }
           }, 50);
           
@@ -856,6 +898,14 @@ export default function HomePage() {
         el.pause();
         setPlayingSleep(false);
       }, sleepMinutes * 60 * 1000);
+    }
+  };
+
+  const stopSleepMode = () => {
+    if (sleepEl) {
+      sleepEl.pause();
+      setPlayingSleep(false);
+      setSleepTimerActive(false);
     }
   };
 
@@ -1746,7 +1796,7 @@ export default function HomePage() {
                     🎵 Välj hur du vill lyssna på sagan
                   </h3>
                   
-                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <div style={{ display: "flex", flexDirection: "row", gap: "12px", flexWrap: "wrap" }}>
                     <button 
                       className="button" 
                       onClick={() => tts(false)} 
@@ -1755,7 +1805,9 @@ export default function HomePage() {
                         fontSize: "16px", 
                         padding: "12px 20px",
                         background: "var(--accent)",
-                        border: "2px solid var(--accent)"
+                        border: "2px solid var(--accent)",
+                        flex: "1",
+                        minWidth: "200px"
                       }}
                     >
                       {loading ? (
@@ -1786,7 +1838,9 @@ export default function HomePage() {
                         padding: "12px 20px",
                         background: elevenLabsUsed >= elevenLabsLimit ? "var(--bg-secondary)" : "linear-gradient(135deg, #ff6b6b, #ffa500)",
                         opacity: elevenLabsUsed >= elevenLabsLimit ? 0.6 : 1,
-                        border: "2px solid #ffa500"
+                        border: "2px solid #ffa500",
+                        flex: "1",
+                        minWidth: "200px"
                       }}
                     >
                       {loading ? (
@@ -2129,26 +2183,34 @@ export default function HomePage() {
                       return "🔒 Pro/Premium-funktion";
                     }
                     
-                    return `🎵 ${sleepChoice === "white-noise" ? "White noise" : 
+                    if (playingSleep) {
+                      return `🔊 Spelar: ${sleepChoice === "white-noise" ? "White noise" : 
+                              sleepChoice === "rain" ? "Regn" :
+                              sleepChoice === "waves" ? "Vågor" :
+                              sleepChoice === "fireplace" ? "Eldsprak" : "Skogsnatt"}${sleepTimerActive ? ` • ⏰ ${sleepTimer} min kvar` : ""}`;
+                    }
+                    
+                    return `🎵 Startar automatiskt efter sagan: ${sleepChoice === "white-noise" ? "White noise" : 
                             sleepChoice === "rain" ? "Regn" :
                             sleepChoice === "waves" ? "Vågor" :
                             sleepChoice === "fireplace" ? "Eldsprak" : "Skogsnatt"}${sleepTimer > 0 ? ` • ⏰ ${sleepTimer} min` : ""}`;
                   })()}
                 </div>
                 
-                <button
-                  className="button"
-                  onClick={startSleepMode}
-                  disabled={playingSleep}
-                  style={{
-                    padding: "8px 16px",
-                    fontSize: "14px",
-                    background: playingSleep ? "var(--bg-secondary)" : "var(--accent)",
-                    opacity: playingSleep ? 0.6 : 1
-                  }}
-                >
-                  {playingSleep ? "🔊 Spelar..." : "▶️ Starta Sleep Mode"}
-                </button>
+                {playingSleep && (
+                  <button
+                    className="button"
+                    onClick={stopSleepMode}
+                    style={{
+                      padding: "8px 16px",
+                      fontSize: "14px",
+                      background: "#ff6b6b",
+                      border: "2px solid #ff6b6b"
+                    }}
+                  >
+                    ⏹️ Stoppa Sleep Mode
+                  </button>
+                )}
               </div>
             </div>
             

@@ -8,6 +8,7 @@ function SuccessContent() {
   const sessionId = searchParams.get("session_id");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [purchaseType, setPurchaseType] = useState<string>("premium");
 
   useEffect(() => {
     if (sessionId) {
@@ -20,10 +21,41 @@ function SuccessContent() {
         .then((res) => res.json())
         .then((data) => {
           if (data.success) {
-            // Set premium cookie
-            document.cookie = "premium=1; path=/; max-age=2592000"; // 30 days
-            document.cookie = `premium_tier=${data.tier}; path=/; max-age=2592000`;
-            document.cookie = `billing_period=${data.period}; path=/; max-age=2592000`;
+            setPurchaseType(data.type || "premium");
+            
+            if (data.type === "magical_voice") {
+              // Handle magical voice purchase
+              // Generate the TTS audio for the story
+              if (data.storyId && data.storyContent) {
+                fetch("/api/tts", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    text: data.storyContent,
+                    provider: "elevenlabs",
+                    voice: "shimmer",
+                    rate: 0.9,
+                    pitch: 1.0,
+                    volume: 1.0
+                  })
+                })
+                .then((ttsRes) => ttsRes.blob())
+                .then((blob) => {
+                  const url = URL.createObjectURL(blob);
+                  // Store the audio URL in localStorage for the main page to pick up
+                  localStorage.setItem("purchasedAudioUrl", url);
+                  localStorage.setItem("purchasedStoryTitle", data.storyTitle || "Saga");
+                })
+                .catch((err) => {
+                  console.error("TTS generation failed:", err);
+                });
+              }
+            } else {
+              // Set premium cookie for subscription purchases
+              document.cookie = "premium=1; path=/; max-age=2592000"; // 30 days
+              document.cookie = `premium_tier=${data.tier}; path=/; max-age=2592000`;
+              document.cookie = `billing_period=${data.period}; path=/; max-age=2592000`;
+            }
             
             // Redirect to main page after a short delay
             setTimeout(() => {
@@ -124,10 +156,14 @@ function SuccessContent() {
         fontSize: "48px", 
         marginBottom: "20px" 
       }}>🎉</div>
-      <h1 style={{ marginBottom: "16px" }}>Välkommen till Premium!</h1>
+      <h1 style={{ marginBottom: "16px" }}>
+        {purchaseType === "magical_voice" ? "Magisk röst köpt!" : "Välkommen till Premium!"}
+      </h1>
       <p style={{ color: "var(--text-secondary)", marginBottom: "24px" }}>
-        Din betalning har gått igenom och din Premium-prenumeration är nu aktiv.
-        Du omdirigeras automatiskt till Drömlyktan...
+        {purchaseType === "magical_voice" 
+          ? "Din betalning har gått igenom och din magiska röst genereras nu. Du omdirigeras automatiskt till Drömlyktan..."
+          : "Din betalning har gått igenom och din Premium-prenumeration är nu aktiv. Du omdirigeras automatiskt till Drömlyktan..."
+        }
       </p>
       <div style={{ 
         width: "40px", 

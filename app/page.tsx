@@ -8,7 +8,7 @@ export default function HomePage() {
   const [characters, setCharacters] = useState<string[]>([]); // Chip-based characters
   const [characterDraft, setCharacterDraft] = useState("");
   const [tone, setTone] = useState("mysig");
-  const [lengthMin, setLengthMin] = useState<3 | 5 | 8>(3);
+  const [lengthMin, setLengthMin] = useState<number>(3);
   const [story, setStory] = useState("");
   const [audioUrl, setAudioUrl] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -51,15 +51,51 @@ export default function HomePage() {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
   const [showDevControls, setShowDevControls] = useState<boolean>(false); // Dev controls hidden by default
   const [isClient, setIsClient] = useState<boolean>(false);
+  const [expandedLibraryItems, setExpandedLibraryItems] = useState<Set<string>>(new Set());
 
   // Fix hydration issues by ensuring client-side rendering
   useEffect(() => {
     setIsClient(true);
+    
+    // Check for purchased audio from magical voice purchase
+    const purchasedAudioUrl = localStorage.getItem("purchasedAudioUrl");
+    const purchasedStoryTitle = localStorage.getItem("purchasedStoryTitle");
+    
+    if (purchasedAudioUrl && purchasedStoryTitle) {
+      setAudioUrl(purchasedAudioUrl);
+      showToast(`Magisk röst genererad för "${purchasedStoryTitle}"!`, "success");
+      
+      // Clean up localStorage
+      localStorage.removeItem("purchasedAudioUrl");
+      localStorage.removeItem("purchasedStoryTitle");
+      
+      // Auto-play the audio
+      setTimeout(() => {
+        const el = document.getElementById("story-audio") as HTMLAudioElement | null;
+        if (el) {
+          el.playbackRate = ttsRate;
+          el.play().catch(() => {});
+          setAudioEl(el);
+        }
+      }, 100);
+    }
   }, []);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
+  };
+
+  const toggleLibraryItem = (storyId: string) => {
+    setExpandedLibraryItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(storyId)) {
+        newSet.delete(storyId);
+      } else {
+        newSet.add(storyId);
+      }
+      return newSet;
+    });
   };
 
   // Helper function to get week number
@@ -1313,7 +1349,7 @@ export default function HomePage() {
             <label style={{ textAlign: "center" }}>Längd ({lengthMin} min) {lengthMin > 3 && <span className="badge">🔒 Premium</span>}</label>
             <input
               type="range"
-              min={3}
+              min={0}
               max={15}
               step={1}
               value={lengthMin}
@@ -1321,9 +1357,9 @@ export default function HomePage() {
                 const v = parseInt(e.target.value);
                 if (v > 3 && !hasPremium) {
                   setShowPaywall(true);
-                  setLengthMin(3 as any);
+                  setLengthMin(3);
                 } else {
-                  setLengthMin(v as any);
+                  setLengthMin(v);
                 }
               }}
             />
@@ -1747,7 +1783,7 @@ export default function HomePage() {
                               showToast(`📖 Kapitel-serie "${title}" startad!`, "success");
                             }}
                           >
-                            🚀 Starta serie
+                            Starta serie
                           </button>
                         </div>
                       )}
@@ -1935,159 +1971,6 @@ export default function HomePage() {
                     </div>
                   </div>
                   
-                  {/* Sleep Mode Controls */}
-                  <div style={{ 
-                    display: "grid", 
-                    gridTemplateColumns: "1fr 1fr", 
-                    gap: "16px",
-                    alignItems: "end",
-                    marginBottom: "20px",
-                    padding: "16px",
-                    background: "rgba(255,255,255,0.02)",
-                    border: "1px solid rgba(255,255,255,0.05)",
-                    borderRadius: "8px"
-                  }}>
-                    {/* Sleep Sound Selection */}
-                    <div>
-                      <label style={{ 
-                        display: "block", 
-                        fontSize: "14px", 
-                        marginBottom: "8px", 
-                        color: "var(--text-secondary)",
-                        fontWeight: "500"
-                      }}>
-                        Sleep Mode Ljud
-                        {(() => {
-                          // Check if user has Pro or Premium tier
-                          if (!hasPremium) return <span style={{ color: "var(--accent-gold)", marginLeft: "4px" }}>🔒</span>;
-                          
-                          const cookie = document.cookie || "";
-                          const tierMatch = cookie.match(/premium_tier=([^;]+)/);
-                          const tier = tierMatch ? tierMatch[1] : "basic";
-                          
-                          if (tier !== "pro" && tier !== "premium") {
-                            return <span style={{ color: "var(--accent-gold)", marginLeft: "4px" }}>🔒</span>;
-                          }
-                          return null;
-                        })()}
-                      </label>
-                      <select 
-                        value={sleepChoice} 
-                        onChange={(e) => {
-                          // Check tier before allowing change
-                          if (!hasPremium) {
-                            setShowPaywall(true);
-                            return;
-                          }
-                          
-                          const cookie = document.cookie || "";
-                          const tierMatch = cookie.match(/premium_tier=([^;]+)/);
-                          const tier = tierMatch ? tierMatch[1] : "basic";
-                          
-                          if (tier !== "pro" && tier !== "premium") {
-                            setShowPaywall(true);
-                            return;
-                          }
-                          
-                          setSleepChoice(e.target.value);
-                        }}
-                        style={{
-                          width: "100%",
-                          padding: "8px 12px",
-                          background: "rgba(255,255,255,0.05)",
-                          border: "1px solid rgba(255,255,255,0.1)",
-                          borderRadius: "8px",
-                          color: "var(--text-primary)",
-                          fontSize: "14px",
-                          opacity: (() => {
-                            if (!hasPremium) return 0.6;
-                            const cookie = document.cookie || "";
-                            const tierMatch = cookie.match(/premium_tier=([^;]+)/);
-                            const tier = tierMatch ? tierMatch[1] : "basic";
-                            return (tier === "pro" || tier === "premium") ? 1 : 0.6;
-                          })()
-                        }}
-                      >
-                        <option value="white-noise">White noise</option>
-                        <option value="rain">Regn</option>
-                        <option value="waves">Vågor</option>
-                        <option value="fireplace">Eldsprak</option>
-                        <option value="forest">Skogsnatt</option>
-                      </select>
-                    </div>
-
-                    {/* Sleep Timer */}
-                    <div>
-                      <label style={{ 
-                        display: "block", 
-                        fontSize: "14px", 
-                        marginBottom: "8px", 
-                        color: "var(--text-secondary)",
-                        fontWeight: "500"
-                      }}>
-                        Sleep Timer
-                        {(() => {
-                          // Check if user has Pro or Premium tier
-                          if (!hasPremium) return <span style={{ color: "var(--accent-gold)", marginLeft: "4px" }}>🔒</span>;
-                          
-                          const cookie = document.cookie || "";
-                          const tierMatch = cookie.match(/premium_tier=([^;]+)/);
-                          const tier = tierMatch ? tierMatch[1] : "basic";
-                          
-                          if (tier !== "pro" && tier !== "premium") {
-                            return <span style={{ color: "var(--accent-gold)", marginLeft: "4px" }}>🔒</span>;
-                          }
-                          return null;
-                        })()}
-                      </label>
-                      <select 
-                        value={sleepTimer} 
-                        onChange={(e) => {
-                          // Check tier before allowing change
-                          if (!hasPremium) {
-                            setShowPaywall(true);
-                            return;
-                          }
-                          
-                          const cookie = document.cookie || "";
-                          const tierMatch = cookie.match(/premium_tier=([^;]+)/);
-                          const tier = tierMatch ? tierMatch[1] : "basic";
-                          
-                          if (tier !== "pro" && tier !== "premium") {
-                            setShowPaywall(true);
-                            return;
-                          }
-                          
-                          setSleepTimer(Number(e.target.value));
-                        }}
-                        style={{
-                          width: "100%",
-                          padding: "8px 12px",
-                          background: "rgba(255,255,255,0.05)",
-                          border: "1px solid rgba(255,255,255,0.1)",
-                          borderRadius: "8px",
-                          color: "var(--text-primary)",
-                          fontSize: "14px",
-                          opacity: (() => {
-                            if (!hasPremium) return 0.6;
-                            const cookie = document.cookie || "";
-                            const tierMatch = cookie.match(/premium_tier=([^;]+)/);
-                            const tier = tierMatch ? tierMatch[1] : "basic";
-                            return (tier === "pro" || tier === "premium") ? 1 : 0.6;
-                          })()
-                        }}
-                      >
-                        <option value={0}>Av</option>
-                        <option value={10}>10 min</option>
-                        <option value={20}>20 min</option>
-                        <option value={30}>30 min</option>
-                        <option value={45}>45 min</option>
-                        <option value={60}>60 min</option>
-                        <option value={90}>90 min</option>
-                        <option value={120}>120 min</option>
-                      </select>
-                    </div>
-                  </div>
                   
                   {/* TTS Buttons */}
                   <div style={{ 
@@ -2126,7 +2009,8 @@ export default function HomePage() {
                         </span>
                       ) : (
                         <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          🎵 Standardröst (Google TTS)
+                          <img src="/lantern.png" alt="Lykt" style={{ width: "20px", height: "20px" }} />
+                          Standardröst
                         </span>
                       )}
                     </button>
@@ -2161,7 +2045,8 @@ export default function HomePage() {
                         </span>
                       ) : (
                         <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          ✨ Magisk röst (ElevenLabs)
+                          <img src="/lantern.png" alt="Lykt" style={{ width: "20px", height: "20px" }} />
+                          Magisk röst
                         </span>
                       )}
                     </button>
@@ -2178,7 +2063,7 @@ export default function HomePage() {
                     margin: "16px auto 0 auto"
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span>✨ Magiska röster kvar:</span>
+                      <span>Magiska röster kvar:</span>
                       <span style={{ 
                         fontWeight: "bold", 
                         color: elevenLabsUsed >= elevenLabsLimit ? "#ff6b6b" : "#ffa500" 
@@ -2197,6 +2082,162 @@ export default function HomePage() {
               {audioUrl && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <audio id="story-audio" className="audio" src={audioUrl} controls />
+                  
+                  {/* Sleep Mode Controls - Show when sleep mode is active */}
+                  {playingSleep && (
+                    <div style={{ 
+                      display: "grid", 
+                      gridTemplateColumns: "1fr 1fr", 
+                      gap: "16px",
+                      alignItems: "end",
+                      marginTop: "16px",
+                      padding: "16px",
+                      background: "rgba(255,255,255,0.02)",
+                      border: "1px solid rgba(255,255,255,0.05)",
+                      borderRadius: "8px"
+                    }}>
+                      {/* Sleep Sound Selection */}
+                      <div>
+                        <label style={{ 
+                          display: "block", 
+                          fontSize: "14px", 
+                          marginBottom: "8px", 
+                          color: "var(--text-secondary)",
+                          fontWeight: "500"
+                        }}>
+                          Sleep Mode Ljud
+                          {(() => {
+                            // Check if user has Pro or Premium tier
+                            if (!hasPremium) return <span style={{ color: "var(--accent-gold)", marginLeft: "4px" }}>🔒</span>;
+                            
+                            const cookie = document.cookie || "";
+                            const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                            const tier = tierMatch ? tierMatch[1] : "basic";
+                            
+                            if (tier !== "pro" && tier !== "premium") {
+                              return <span style={{ color: "var(--accent-gold)", marginLeft: "4px" }}>🔒</span>;
+                            }
+                            return null;
+                          })()}
+                        </label>
+                        <select 
+                          value={sleepChoice} 
+                          onChange={(e) => {
+                            // Check tier before allowing change
+                            if (!hasPremium) {
+                              setShowPaywall(true);
+                              return;
+                            }
+                            
+                            const cookie = document.cookie || "";
+                            const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                            const tier = tierMatch ? tierMatch[1] : "basic";
+                            
+                            if (tier !== "pro" && tier !== "premium") {
+                              setShowPaywall(true);
+                              return;
+                            }
+                            
+                            setSleepChoice(e.target.value);
+                          }}
+                          style={{
+                            width: "100%",
+                            padding: "8px 12px",
+                            background: "rgba(255,255,255,0.05)",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            borderRadius: "8px",
+                            color: "var(--text-primary)",
+                            fontSize: "14px",
+                            opacity: (() => {
+                              if (!hasPremium) return 0.6;
+                              const cookie = document.cookie || "";
+                              const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                              const tier = tierMatch ? tierMatch[1] : "basic";
+                              return (tier === "pro" || tier === "premium") ? 1 : 0.6;
+                            })()
+                          }}
+                        >
+                          <option value="white-noise">White noise</option>
+                          <option value="rain">Regn</option>
+                          <option value="waves">Vågor</option>
+                          <option value="fireplace">Eldsprak</option>
+                          <option value="forest">Skogsnatt</option>
+                        </select>
+                      </div>
+
+                      {/* Sleep Timer */}
+                      <div>
+                        <label style={{ 
+                          display: "block", 
+                          fontSize: "14px", 
+                          marginBottom: "8px", 
+                          color: "var(--text-secondary)",
+                          fontWeight: "500"
+                        }}>
+                          Sleep Timer
+                          {(() => {
+                            // Check if user has Pro or Premium tier
+                            if (!hasPremium) return <span style={{ color: "var(--accent-gold)", marginLeft: "4px" }}>🔒</span>;
+                            
+                            const cookie = document.cookie || "";
+                            const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                            const tier = tierMatch ? tierMatch[1] : "basic";
+                            
+                            if (tier !== "pro" && tier !== "premium") {
+                              return <span style={{ color: "var(--accent-gold)", marginLeft: "4px" }}>🔒</span>;
+                            }
+                            return null;
+                          })()}
+                        </label>
+                        <select 
+                          value={sleepTimer} 
+                          onChange={(e) => {
+                            // Check tier before allowing change
+                            if (!hasPremium) {
+                              setShowPaywall(true);
+                              return;
+                            }
+                            
+                            const cookie = document.cookie || "";
+                            const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                            const tier = tierMatch ? tierMatch[1] : "basic";
+                            
+                            if (tier !== "pro" && tier !== "premium") {
+                              setShowPaywall(true);
+                              return;
+                            }
+                            
+                            setSleepTimer(Number(e.target.value));
+                          }}
+                          style={{
+                            width: "100%",
+                            padding: "8px 12px",
+                            background: "rgba(255,255,255,0.05)",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            borderRadius: "8px",
+                            color: "var(--text-primary)",
+                            fontSize: "14px",
+                            opacity: (() => {
+                              if (!hasPremium) return 0.6;
+                              const cookie = document.cookie || "";
+                              const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                              const tier = tierMatch ? tierMatch[1] : "basic";
+                              return (tier === "pro" || tier === "premium") ? 1 : 0.6;
+                            })()
+                          }}
+                        >
+                          <option value={0}>Av</option>
+                          <option value={10}>10 min</option>
+                          <option value={20}>20 min</option>
+                          <option value={30}>30 min</option>
+                          <option value={45}>45 min</option>
+                          <option value={60}>60 min</option>
+                          <option value={90}>90 min</option>
+                          <option value={120}>120 min</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
                   <div className="controls" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                     <button
                       className="button"
@@ -2275,215 +2316,6 @@ export default function HomePage() {
               )}
             </div>
             
-            {/* Sleep Mode Section */}
-            <div style={{ 
-              marginTop: "24px", 
-              padding: "20px", 
-              background: "rgba(255,255,255,0.03)", 
-              border: "1px solid rgba(255,255,255,0.08)", 
-              borderRadius: "16px" 
-            }}>
-              <h3 style={{ 
-                margin: "0 0 16px 0", 
-                fontSize: "16px", 
-                color: "var(--accent)",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px"
-              }}>
-                😴 Sleep Mode (efter sagan)
-                {(() => {
-                  // Check if user has Pro or Premium tier
-                  if (!hasPremium) return <span style={{ color: "var(--accent-gold)" }}>🔒</span>;
-                  
-                  const cookie = document.cookie || "";
-                  const tierMatch = cookie.match(/premium_tier=([^;]+)/);
-                  const tier = tierMatch ? tierMatch[1] : "basic";
-                  
-                  if (tier !== "pro" && tier !== "premium") {
-                    return <span style={{ color: "var(--accent-gold)" }}>🔒</span>;
-                  }
-                  return null;
-                })()}
-              </h3>
-              
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-                <div>
-                  <label style={{ 
-                    display: "block", 
-                    fontSize: "14px", 
-                    marginBottom: "8px", 
-                    color: "var(--text-secondary)" 
-                  }}>
-                    Ljudtyp
-                  </label>
-                  <select 
-                    value={sleepChoice} 
-                    onChange={(e) => {
-                      // Check tier before allowing change
-                      if (!hasPremium) {
-                        setShowPaywall(true);
-                        return;
-                      }
-                      
-                      const cookie = document.cookie || "";
-                      const tierMatch = cookie.match(/premium_tier=([^;]+)/);
-                      const tier = tierMatch ? tierMatch[1] : "basic";
-                      
-                      if (tier !== "pro" && tier !== "premium") {
-                        setShowPaywall(true);
-                        return;
-                      }
-                      
-                      setSleepChoice(e.target.value);
-                    }}
-                    style={{ 
-                      width: "100%",
-                      padding: "10px 12px",
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: "8px",
-                      color: "var(--text-primary)",
-                      opacity: (() => {
-                        if (!hasPremium) return 0.6;
-                        const cookie = document.cookie || "";
-                        const tierMatch = cookie.match(/premium_tier=([^;]+)/);
-                        const tier = tierMatch ? tierMatch[1] : "basic";
-                        return (tier === "pro" || tier === "premium") ? 1 : 0.6;
-                      })()
-                    }}
-                  >
-                    <option value="white-noise">🌊 White noise</option>
-                    <option value="rain">🌧️ Regn</option>
-                    <option value="waves">🌊 Vågor</option>
-                    <option value="fireplace">🔥 Eldsprak</option>
-                    <option value="forest">🌲 Skogsnatt</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label style={{ 
-                    display: "block", 
-                    fontSize: "14px", 
-                    marginBottom: "8px", 
-                    color: "var(--text-secondary)" 
-                  }}>
-                    Sleep Timer
-                  </label>
-                  <select 
-                    value={sleepTimer} 
-                    onChange={(e) => {
-                      // Check tier before allowing change
-                      if (!hasPremium) {
-                        setShowPaywall(true);
-                        return;
-                      }
-                      
-                      const cookie = document.cookie || "";
-                      const tierMatch = cookie.match(/premium_tier=([^;]+)/);
-                      const tier = tierMatch ? tierMatch[1] : "basic";
-                      
-                      if (tier !== "pro" && tier !== "premium") {
-                        setShowPaywall(true);
-                        return;
-                      }
-                      
-                      setSleepTimer(Number(e.target.value));
-                    }}
-                    style={{ 
-                      width: "100%",
-                      padding: "10px 12px",
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: "8px",
-                      color: "var(--text-primary)",
-                      opacity: (() => {
-                        if (!hasPremium) return 0.6;
-                        const cookie = document.cookie || "";
-                        const tierMatch = cookie.match(/premium_tier=([^;]+)/);
-                        const tier = tierMatch ? tierMatch[1] : "basic";
-                        return (tier === "pro" || tier === "premium") ? 1 : 0.6;
-                      })()
-                    }}
-                  >
-                    <option value={0}>⏰ Av</option>
-                    <option value={10}>⏰ 10 min</option>
-                    <option value={20}>⏰ 20 min</option>
-                    <option value={30}>⏰ 30 min</option>
-                    <option value={45}>⏰ 45 min</option>
-                    <option value={60}>⏰ 60 min</option>
-                    <option value={90}>⏰ 90 min</option>
-                    <option value={120}>⏰ 120 min</option>
-                  </select>
-                  
-                  {sleepTimerActive && (
-                    <div style={{ 
-                      marginTop: "8px", 
-                      padding: "6px 10px", 
-                      background: "rgba(255,165,0,0.1)", 
-                      border: "1px solid rgba(255,165,0,0.3)", 
-                      borderRadius: "6px",
-                      fontSize: "12px",
-                      color: "var(--accent-gold)",
-                      textAlign: "center"
-                    }}>
-                      ⏰ Timer aktiv: {sleepTimer} min
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div style={{ 
-                display: "flex", 
-                justifyContent: "space-between", 
-                alignItems: "center",
-                padding: "12px 16px",
-                background: "rgba(255,255,255,0.02)",
-                border: "1px solid rgba(255,255,255,0.05)",
-                borderRadius: "8px"
-              }}>
-                <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
-                  {(() => {
-                    if (!hasPremium) return "🔒 Pro/Premium-funktion";
-                    
-                    const cookie = document.cookie || "";
-                    const tierMatch = cookie.match(/premium_tier=([^;]+)/);
-                    const tier = tierMatch ? tierMatch[1] : "basic";
-                    
-                    if (tier !== "pro" && tier !== "premium") {
-                      return "🔒 Pro/Premium-funktion";
-                    }
-                    
-                    if (playingSleep) {
-                      return `🔊 Spelar: ${sleepChoice === "white-noise" ? "White noise" : 
-                              sleepChoice === "rain" ? "Regn" :
-                              sleepChoice === "waves" ? "Vågor" :
-                              sleepChoice === "fireplace" ? "Eldsprak" : "Skogsnatt"}${sleepTimerActive ? ` • ⏰ ${sleepTimer} min kvar` : ""}`;
-                    }
-                    
-                    return `🎵 Startar automatiskt efter sagan: ${sleepChoice === "white-noise" ? "White noise" : 
-                            sleepChoice === "rain" ? "Regn" :
-                            sleepChoice === "waves" ? "Vågor" :
-                            sleepChoice === "fireplace" ? "Eldsprak" : "Skogsnatt"}${sleepTimer > 0 ? ` • ⏰ ${sleepTimer} min` : ""}`;
-                  })()}
-                </div>
-                
-                {playingSleep && (
-                  <button
-                    className="button"
-                    onClick={stopSleepMode}
-                    style={{
-                      padding: "8px 16px",
-                      fontSize: "14px",
-                      background: "#ff6b6b",
-                      border: "2px solid #ff6b6b"
-                    }}
-                  >
-                    ⏹️ Stoppa Sleep Mode
-                  </button>
-                )}
-              </div>
-            </div>
             
             <hr />
             <div>
@@ -2535,168 +2367,255 @@ export default function HomePage() {
                 </p>
               ) : (
                 <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                  {filteredHistory.map((h, idx) => (
-                    <li key={h.id} style={{ marginBottom: 8, display: "flex", gap: 8, alignItems: "center" }}>
-                      <span className="badge">{new Date(h.createdAt).toLocaleTimeString()}</span>
-                      <span style={{ flex: 1, opacity: idx === 0 ? 1 : 0.6 }}>
-                        {idx > 0 ? `🔒 ${h.title}` : h.title}
-                      </span>
-                      <button
-                        className="button"
-                        disabled={idx > 0}
-                        onClick={() => {
-                          if (idx > 0) {
-                            alert("Premium krävs för att öppna äldre sagor.");
-                            return;
-                          }
-                          setStory(h.content);
-                          setError("");
-                        }}
-                      >Öppna</button>
-                      <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
-                        {[1, 2, 3, 4, 5].map(star => (
-                          <button
-                            key={star}
-                            onClick={() => rateStory(h.id, star)}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              fontSize: "14px",
-                              cursor: "pointer",
-                              color: userRatings[h.id] >= star ? "#ffd700" : "rgba(255,255,255,0.3)",
-                              transition: "color 0.2s ease"
-                            }}
-                          >
-                            ⭐
-                          </button>
-                        ))}
-                      </div>
-                      <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-                        <button
-                          className="button"
-                          style={{ fontSize: "12px", padding: "4px 8px" }}
-                          onClick={async () => {
-                            if (!hasPremium) {
-                              setShowPaywall(true);
-                              return;
-                            }
-                            try {
-                              const res = await fetch("/api/export", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ 
-                                  storyId: h.id, 
-                                  format: "pdf", 
-                                  title: h.title, 
-                                  content: h.content 
-                                })
-                              });
-                              if (res.ok) {
-                                const blob = await res.blob();
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement("a");
-                                a.href = url;
-                                a.download = `${h.title.replace(/[^a-zA-Z0-9]/g, '_')}.html`;
-                                a.click();
-                                URL.revokeObjectURL(url);
-                                showToast("📄 PDF exporterad!", "success");
-                              } else {
-                                showToast("Export misslyckades", "error");
-                              }
-                            } catch (error) {
-                              showToast("Export misslyckades", "error");
-                            }
+                  {filteredHistory.map((h, idx) => {
+                    const isExpanded = expandedLibraryItems.has(h.id);
+                    return (
+                      <li key={h.id} style={{ 
+                        marginBottom: 8, 
+                        border: "1px solid rgba(255,255,255,0.1)", 
+                        borderRadius: "8px",
+                        overflow: "hidden"
+                      }}>
+                        {/* Compact header - always visible */}
+                        <div 
+                          style={{ 
+                            display: "flex", 
+                            gap: 8, 
+                            alignItems: "center", 
+                            padding: "12px",
+                            cursor: "pointer",
+                            background: isExpanded ? "rgba(255,255,255,0.02)" : "transparent",
+                            transition: "background 0.2s ease"
                           }}
-                        >📄 PDF</button>
-                        <button
-                          className="button"
-                          style={{ fontSize: "12px", padding: "4px 8px" }}
-                          onClick={async () => {
-                            if (!hasPremium) {
-                              setShowPaywall(true);
-                              return;
-                            }
-                            try {
-                              const res = await fetch("/api/export", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ 
-                                  storyId: h.id, 
-                                  format: "txt", 
-                                  title: h.title, 
-                                  content: h.content 
-                                })
-                              });
-                              if (res.ok) {
-                                const blob = await res.blob();
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement("a");
-                                a.href = url;
-                                a.download = `${h.title.replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
-                                a.click();
-                                URL.revokeObjectURL(url);
-                                showToast("📝 Textfil exporterad!", "success");
-                              } else {
-                                showToast("Export misslyckades", "error");
-                              }
-                            } catch (error) {
-                              showToast("Export misslyckades", "error");
-                            }
-                          }}
-                        >📝 TXT</button>
-                        <button
-                          className="button"
-                          style={{ fontSize: "12px", padding: "4px 8px" }}
-                          onClick={() => {
-                            // Show pricing modal
-                            const format = prompt("Välj format:\n1. Softcover (149kr)\n2. Hardcover (249kr)\n3. Premium med illustrationer (349kr)");
-                            if (!format) return;
+                          onClick={() => toggleLibraryItem(h.id)}
+                        >
+                          <span className="badge">{new Date(h.createdAt).toLocaleTimeString()}</span>
+                          <span style={{ flex: 1, opacity: idx === 0 ? 1 : 0.6 }}>
+                            {idx > 0 ? `🔒 ${h.title}` : h.title}
+                          </span>
+                          <span style={{ 
+                            fontSize: "12px", 
+                            color: "var(--text-secondary)",
+                            transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                            transition: "transform 0.2s ease"
+                          }}>
+                            ▼
+                          </span>
+                        </div>
+                        
+                        {/* Expanded content - only visible when expanded */}
+                        {isExpanded && (
+                          <div style={{ 
+                            padding: "12px", 
+                            borderTop: "1px solid rgba(255,255,255,0.05)",
+                            background: "rgba(255,255,255,0.01)"
+                          }}>
+                            <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "12px" }}>
+                              <button
+                                className="button"
+                                disabled={idx > 0}
+                                onClick={() => {
+                                  if (idx > 0) {
+                                    alert("Premium krävs för att öppna äldre sagor.");
+                                    return;
+                                  }
+                                  setStory(h.content);
+                                  setError("");
+                                }}
+                              >Öppna</button>
+                              <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                                {[1, 2, 3, 4, 5].map(star => (
+                                  <button
+                                    key={star}
+                                    onClick={() => rateStory(h.id, star)}
+                                    style={{
+                                      background: "none",
+                                      border: "none",
+                                      fontSize: "14px",
+                                      cursor: "pointer",
+                                      color: userRatings[h.id] >= star ? "#ffd700" : "rgba(255,255,255,0.3)",
+                                      transition: "color 0.2s ease"
+                                    }}
+                                  >
+                                    ⭐
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                             
-                            const formatMap: Record<string, { type: string; price: number; pages: number }> = {
-                              "1": { type: "softcover", price: hasPremium ? 119 : 149, pages: 24 },
-                              "2": { type: "hardcover", price: hasPremium ? 199 : 249, pages: 32 },
-                              "3": { type: "premium", price: hasPremium ? 279 : 349, pages: 40 }
-                            };
-                            
-                            const selected = formatMap[format];
-                            if (!selected) return;
-                            
-                            const input = document.createElement("input");
-                            input.type = "file";
-                            input.accept = "image/*";
-                            input.multiple = true;
-                            input.onchange = async () => {
-                              const files = Array.from(input.files || []);
-                              const images: string[] = [];
-                              for (const f of files.slice(0, 6)) {
-                                const b = await f.arrayBuffer();
-                                const base64 = btoa(String.fromCharCode(...new Uint8Array(b)));
-                                images.push(`data:${f.type};base64,${base64}`);
-                              }
-                              fetch("/api/order", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ 
-                                  storyId: h.id, 
-                                  title: h.title, 
-                                  format: selected.type, 
-                                  pages: selected.pages, 
-                                  images,
-                                  price: selected.price,
-                                  hasPremium
-                                })
-                              }).then(async (r) => {
-                                const j = await r.json();
-                                if (!r.ok) return alert(j?.error || "Fel vid beställning");
-                                alert(`Beställning skapad! Order-id: ${j.orderId}\nPris: ${selected.price}kr${hasPremium ? " (Premium-rabatt inkluderad)" : ""}`);
-                              });
-                            };
-                            input.click();
-                          }}
-                        >📚 Beställ bok</button>
-                      </div>
-                    </li>
-                  ))}
+                            <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                              <button
+                                className="button"
+                                style={{ fontSize: "12px", padding: "4px 8px" }}
+                                onClick={async () => {
+                                  if (!hasPremium) {
+                                    setShowPaywall(true);
+                                    return;
+                                  }
+                                  try {
+                                    const res = await fetch("/api/export", {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ 
+                                        storyId: h.id, 
+                                        format: "pdf", 
+                                        title: h.title, 
+                                        content: h.content 
+                                      })
+                                    });
+                                    if (res.ok) {
+                                      const blob = await res.blob();
+                                      const url = URL.createObjectURL(blob);
+                                      const a = document.createElement("a");
+                                      a.href = url;
+                                      a.download = `${h.title.replace(/[^a-zA-Z0-9]/g, '_')}.html`;
+                                      a.click();
+                                      URL.revokeObjectURL(url);
+                                      showToast("📄 PDF exporterad!", "success");
+                                    } else {
+                                      showToast("Export misslyckades", "error");
+                                    }
+                                  } catch (error) {
+                                    showToast("Export misslyckades", "error");
+                                  }
+                                }}
+                              >📄 PDF</button>
+                              <button
+                                className="button"
+                                style={{ fontSize: "12px", padding: "4px 8px" }}
+                                onClick={async () => {
+                                  if (!hasPremium) {
+                                    setShowPaywall(true);
+                                    return;
+                                  }
+                                  try {
+                                    const res = await fetch("/api/export", {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ 
+                                        storyId: h.id, 
+                                        format: "txt", 
+                                        title: h.title, 
+                                        content: h.content 
+                                      })
+                                    });
+                                    if (res.ok) {
+                                      const blob = await res.blob();
+                                      const url = URL.createObjectURL(blob);
+                                      const a = document.createElement("a");
+                                      a.href = url;
+                                      a.download = `${h.title.replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
+                                      a.click();
+                                      URL.revokeObjectURL(url);
+                                      showToast("📝 Textfil exporterad!", "success");
+                                    } else {
+                                      showToast("Export misslyckades", "error");
+                                    }
+                                  } catch (error) {
+                                    showToast("Export misslyckades", "error");
+                                  }
+                                }}
+                              >📝 TXT</button>
+                              <button
+                                className="button"
+                                style={{ 
+                                  fontSize: "12px", 
+                                  padding: "4px 8px",
+                                  background: "linear-gradient(135deg, #ff6b6b, #ffa500)",
+                                  border: "2px solid #ffa500"
+                                }}
+                                onClick={async () => {
+                                  // Confirm purchase
+                                  const confirmed = confirm(`Generera magisk röst för "${h.title}"?\n\nKostnad: 5 kr`);
+                                  if (!confirmed) return;
+                                  
+                                  try {
+                                    // Process payment
+                                    setLoading(true);
+                                    const paymentRes = await fetch("/api/checkout", {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({
+                                        amount: 500, // 5 kr in öre
+                                        description: `Magisk röst för sagan: ${h.title}`,
+                                        storyId: h.id,
+                                        type: "magical_voice"
+                                      })
+                                    });
+                                    
+                                    if (!paymentRes.ok) {
+                                      const error = await paymentRes.json();
+                                      throw new Error(error.error || "Betalning misslyckades");
+                                    }
+                                    
+                                    const paymentData = await paymentRes.json();
+                                    
+                                    // Redirect to Stripe checkout
+                                    window.location.href = paymentData.url;
+                                    
+                                  } catch (error: any) {
+                                    console.error("Payment Error:", error);
+                                    showToast(error.message || "Fel vid betalning", "error");
+                                    setLoading(false);
+                                  }
+                                }}
+                              ><img src="/lantern.png" alt="Lykt" style={{ width: "12px", height: "12px", marginRight: "4px" }} />Magisk röst (5 kr)</button>
+                              <button
+                                className="button"
+                                style={{ fontSize: "12px", padding: "4px 8px" }}
+                                onClick={() => {
+                                  // Show pricing modal
+                                  const format = prompt("Välj format:\n1. Softcover (149kr)\n2. Hardcover (249kr)\n3. Premium med illustrationer (349kr)");
+                                  if (!format) return;
+                                  
+                                  const formatMap: Record<string, { type: string; price: number; pages: number }> = {
+                                    "1": { type: "softcover", price: hasPremium ? 119 : 149, pages: 24 },
+                                    "2": { type: "hardcover", price: hasPremium ? 199 : 249, pages: 32 },
+                                    "3": { type: "premium", price: hasPremium ? 279 : 349, pages: 40 }
+                                  };
+                                  
+                                  const selected = formatMap[format];
+                                  if (!selected) return;
+                                  
+                                  const input = document.createElement("input");
+                                  input.type = "file";
+                                  input.accept = "image/*";
+                                  input.multiple = true;
+                                  input.onchange = async () => {
+                                    const files = Array.from(input.files || []);
+                                    const images: string[] = [];
+                                    for (const f of files.slice(0, 6)) {
+                                      const b = await f.arrayBuffer();
+                                      const base64 = btoa(String.fromCharCode(...new Uint8Array(b)));
+                                      images.push(`data:${f.type};base64,${base64}`);
+                                    }
+                                    fetch("/api/order", {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ 
+                                        storyId: h.id, 
+                                        title: h.title, 
+                                        format: selected.type, 
+                                        pages: selected.pages, 
+                                        images,
+                                        price: selected.price,
+                                        hasPremium
+                                      })
+                                    }).then(async (r) => {
+                                      const j = await r.json();
+                                      if (!r.ok) return alert(j?.error || "Fel vid beställning");
+                                      alert(`Beställning skapad! Order-id: ${j.orderId}\nPris: ${selected.price}kr${hasPremium ? " (Premium-rabatt inkluderad)" : ""}`);
+                                    });
+                                  };
+                                  input.click();
+                                }}
+                              >📚 Beställ bok</button>
+                            </div>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>

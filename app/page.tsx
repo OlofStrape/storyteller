@@ -1785,17 +1785,19 @@ export default function HomePage() {
                 </>
               )}
               <div className="controls">
+                {/* Main TTS Selection - Full Width */}
                 <div style={{ 
                   background: "rgba(255,255,255,0.05)", 
                   border: "1px solid rgba(255,255,255,0.1)", 
                   borderRadius: "16px", 
-                  padding: "20px",
+                  padding: "24px",
                   marginBottom: "20px",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                  width: "100%"
                 }}>
                   <h3 style={{ 
-                    margin: "0 0 16px 0", 
-                    fontSize: "18px", 
+                    margin: "0 0 20px 0", 
+                    fontSize: "20px", 
                     color: "var(--accent)",
                     textAlign: "center",
                     fontWeight: "600"
@@ -1806,7 +1808,9 @@ export default function HomePage() {
                   <div style={{ 
                     display: "grid", 
                     gridTemplateColumns: "1fr 1fr", 
-                    gap: "16px"
+                    gap: "20px",
+                    maxWidth: "600px",
+                    margin: "0 auto"
                   }}>
                     <button 
                       className="button" 
@@ -1814,7 +1818,7 @@ export default function HomePage() {
                       disabled={loading || !story}
                       style={{ 
                         fontSize: "16px", 
-                        padding: "16px 24px",
+                        padding: "18px 28px",
                         background: "var(--accent)",
                         border: "2px solid var(--accent)",
                         borderRadius: "12px",
@@ -1848,7 +1852,7 @@ export default function HomePage() {
                       disabled={loading || !story || elevenLabsUsed >= elevenLabsLimit}
                       style={{ 
                         fontSize: "16px", 
-                        padding: "16px 24px",
+                        padding: "18px 28px",
                         background: elevenLabsUsed >= elevenLabsLimit ? "var(--bg-secondary)" : "linear-gradient(135deg, #ff6b6b, #ffa500)",
                         opacity: elevenLabsUsed >= elevenLabsLimit ? 0.6 : 1,
                         border: "2px solid #ffa500",
@@ -1879,12 +1883,14 @@ export default function HomePage() {
                   </div>
                   
                   <div style={{ 
-                    marginTop: "12px", 
-                    padding: "8px 12px", 
+                    marginTop: "16px", 
+                    padding: "12px 16px", 
                     background: "rgba(255,165,0,0.1)", 
                     border: "1px solid rgba(255,165,0,0.3)", 
                     borderRadius: "8px",
-                    fontSize: "14px"
+                    fontSize: "14px",
+                    maxWidth: "600px",
+                    margin: "16px auto 0 auto"
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span>✨ Magiska röster kvar:</span>
@@ -1902,39 +1908,141 @@ export default function HomePage() {
                     )}
                   </div>
                 </div>
-                <select value={ttsVoice} onChange={(e) => {
-                  const voice = e.target.value;
-                  if (['echo', 'fable', 'onyx', 'nova', 'shimmer'].includes(voice) && !hasPremium) {
-                    setShowPaywall(true);
-                    return;
-                  }
-                  setTtsVoice(voice);
+
+                {/* TTS Controls - Horizontal Layout */}
+                <div style={{ 
+                  background: "rgba(255,255,255,0.03)", 
+                  border: "1px solid rgba(255,255,255,0.08)", 
+                  borderRadius: "12px", 
+                  padding: "16px",
+                  marginBottom: "20px"
                 }}>
-                  <optgroup label="🏆 Bästa för sagor (Google WaveNet)">
-                    <option value="shimmer">Astrid - Kvinna, naturlig & varm ⭐⭐⭐</option>
-                    <option value="nova">Erik - Man, varm & berättande ⭐⭐⭐</option>
-                  </optgroup>
-                  <optgroup label="👩 Kvinnliga röster">
-                    <option value="echo">Elin - Mjuk & lugn ⭐⭐</option>
-                    <option value="fable">Anna - Ung & energisk ⭐⭐</option>
-                    <option value="alloy">Astrid (alt) - Naturlig & klar ⭐⭐</option>
-                  </optgroup>
-                  <optgroup label="👨 Manliga röster">
-                    <option value="onyx">Nils - Djup & behaglig ⭐⭐</option>
-                  </optgroup>
-                </select>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
-                  <div>
-                    <span className="small">Hastighet: {ttsRate.toFixed(1)}x</span>
-                    <input type="range" min={0.6} max={1.3} step={0.1} value={ttsRate} onChange={(e) => setTtsRate(parseFloat(e.target.value))} style={{ width: "100%" }} />
-                  </div>
-                  <div>
-                    <span className="small">Ton: {ttsPitch.toFixed(1)}x</span>
-                    <input type="range" min={0.5} max={2.0} step={0.1} value={ttsPitch} onChange={(e) => setTtsPitch(parseFloat(e.target.value))} style={{ width: "100%" }} />
-                  </div>
-                  <div>
-                    <span className="small">Volym: {Math.round(ttsVolume * 100)}%</span>
-                    <input type="range" min={0.1} max={1.0} step={0.1} value={ttsVolume} onChange={(e) => setTtsVolume(parseFloat(e.target.value))} style={{ width: "100%" }} />
+                  <div style={{ 
+                    display: "grid", 
+                    gridTemplateColumns: "1fr 1fr 1fr 1fr", 
+                    gap: "16px",
+                    alignItems: "end"
+                  }}>
+                    {/* Voice Selection */}
+                    <div>
+                      <label style={{ 
+                        display: "block", 
+                        fontSize: "14px", 
+                        marginBottom: "8px", 
+                        color: "var(--text-secondary)",
+                        fontWeight: "500"
+                      }}>
+                        🎤 Röst
+                      </label>
+                      <select 
+                        value={ttsVoice} 
+                        onChange={(e) => {
+                          const voice = e.target.value;
+                          if (['echo', 'fable', 'onyx', 'nova', 'shimmer'].includes(voice) && !hasPremium) {
+                            setShowPaywall(true);
+                            return;
+                          }
+                          setTtsVoice(voice);
+                        }}
+                        style={{
+                          width: "100%",
+                          padding: "8px 12px",
+                          background: "rgba(255,255,255,0.05)",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          borderRadius: "8px",
+                          color: "var(--text-primary)",
+                          fontSize: "14px"
+                        }}
+                      >
+                        <optgroup label="🏆 Bästa för sagor">
+                          <option value="shimmer">Astrid - Kvinna, naturlig & varm ⭐⭐⭐</option>
+                          <option value="nova">Erik - Man, varm & berättande ⭐⭐⭐</option>
+                        </optgroup>
+                        <optgroup label="👩 Kvinnliga röster">
+                          <option value="echo">Elin - Mjuk & lugn ⭐⭐</option>
+                          <option value="fable">Anna - Ung & energisk ⭐⭐</option>
+                          <option value="alloy">Astrid (alt) - Naturlig & klar ⭐⭐</option>
+                        </optgroup>
+                        <optgroup label="👨 Manliga röster">
+                          <option value="onyx">Nils - Djup & behaglig ⭐⭐</option>
+                        </optgroup>
+                      </select>
+                    </div>
+
+                    {/* Speed Control */}
+                    <div>
+                      <label style={{ 
+                        display: "block", 
+                        fontSize: "14px", 
+                        marginBottom: "8px", 
+                        color: "var(--text-secondary)",
+                        fontWeight: "500"
+                      }}>
+                        ⚡ Hastighet: {ttsRate.toFixed(1)}x
+                      </label>
+                      <input 
+                        type="range" 
+                        min={0.6} 
+                        max={1.3} 
+                        step={0.1} 
+                        value={ttsRate} 
+                        onChange={(e) => setTtsRate(parseFloat(e.target.value))} 
+                        style={{ 
+                          width: "100%",
+                          accentColor: "var(--accent)"
+                        }} 
+                      />
+                    </div>
+
+                    {/* Pitch Control */}
+                    <div>
+                      <label style={{ 
+                        display: "block", 
+                        fontSize: "14px", 
+                        marginBottom: "8px", 
+                        color: "var(--text-secondary)",
+                        fontWeight: "500"
+                      }}>
+                        🎵 Ton: {ttsPitch.toFixed(1)}x
+                      </label>
+                      <input 
+                        type="range" 
+                        min={0.5} 
+                        max={2.0} 
+                        step={0.1} 
+                        value={ttsPitch} 
+                        onChange={(e) => setTtsPitch(parseFloat(e.target.value))} 
+                        style={{ 
+                          width: "100%",
+                          accentColor: "var(--accent)"
+                        }} 
+                      />
+                    </div>
+
+                    {/* Volume Control */}
+                    <div>
+                      <label style={{ 
+                        display: "block", 
+                        fontSize: "14px", 
+                        marginBottom: "8px", 
+                        color: "var(--text-secondary)",
+                        fontWeight: "500"
+                      }}>
+                        🔊 Volym: {Math.round(ttsVolume * 100)}%
+                      </label>
+                      <input 
+                        type="range" 
+                        min={0.1} 
+                        max={1.0} 
+                        step={0.1} 
+                        value={ttsVolume} 
+                        onChange={(e) => setTtsVolume(parseFloat(e.target.value))} 
+                        style={{ 
+                          width: "100%",
+                          accentColor: "var(--accent)"
+                        }} 
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

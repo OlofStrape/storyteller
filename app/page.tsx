@@ -818,7 +818,21 @@ export default function HomePage() {
   }
 
   const startSleepMode = () => {
-    // Auto-enabled for testing (no tier check needed)
+    // Check if user has Pro or Premium tier
+    if (!hasPremium) {
+      setShowPaywall(true);
+      return;
+    }
+    
+    const cookie = document.cookie || "";
+    const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+    const tier = tierMatch ? tierMatch[1] : "basic";
+    
+    if (tier !== "pro" && tier !== "premium") {
+      setShowPaywall(true);
+      return;
+    }
+    
     const src = `/audio/${sleepChoice}.mp3`;
     const el = new Audio(src);
     el.loop = true;
@@ -1497,43 +1511,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        <hr />
-        <div>
-          <label style={{ textAlign: "center" }}>Sleep Mode (efter sagan)</label>
-          <div className="row">
-            <div>
-              <label style={{ textAlign: "center", fontSize: "14px", marginBottom: "6px" }}>Ljudtyp</label>
-              <select value={sleepChoice} onChange={(e) => setSleepChoice(e.target.value)}>
-                <option value="white-noise">White noise</option>
-                <option value="rain">Regn</option>
-                <option value="waves">Vågor</option>
-                <option value="fireplace">Eldsprak</option>
-                <option value="forest">Skogsnatt</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ textAlign: "center", fontSize: "14px", marginBottom: "6px" }}>Sleep Timer</label>
-              <select 
-                value={sleepTimer} 
-                onChange={(e) => setSleepTimer(Number(e.target.value))}
-              >
-                <option value={0}>Av</option>
-                <option value={10}>10 min</option>
-                <option value={20}>20 min</option>
-                <option value={30}>30 min</option>
-                <option value={45}>45 min</option>
-                <option value={60}>60 min</option>
-                <option value={90}>90 min</option>
-                <option value={120}>120 min</option>
-              </select>
-              {sleepTimerActive && (
-                <span className="small" style={{ color: "var(--accent-gold)", display: "block", marginTop: "4px", textAlign: "center" }}>
-                  ⏰ Timer aktiv: {sleepTimer} min
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
 
         {loading && (
           <div style={{ marginTop: "16px", padding: "16px", background: "rgba(255,255,255,0.05)", borderRadius: "12px" }}>
@@ -1895,7 +1872,53 @@ export default function HomePage() {
               {audioUrl && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <audio id="story-audio" className="audio" src={audioUrl} controls />
-                  <div className="controls">
+                  <div className="controls" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    <button
+                      className="button"
+                      onClick={async () => {
+                        // Check if user has Pro or Premium tier
+                        if (!hasPremium) {
+                          setShowPaywall(true);
+                          return;
+                        }
+                        
+                        // Get tier from cookie
+                        const cookie = document.cookie || "";
+                        const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                        const tier = tierMatch ? tierMatch[1] : "basic";
+                        
+                        if (tier !== "pro" && tier !== "premium") {
+                          setShowPaywall(true);
+                          return;
+                        }
+                        
+                        try {
+                          // Save the already generated MP3
+                          const audioElement = document.getElementById("story-audio") as HTMLAudioElement;
+                          if (audioElement && audioElement.src) {
+                            const response = await fetch(audioElement.src);
+                            const blob = await response.blob();
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = `dromlyktan-${Date.now()}.mp3`;
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                            URL.revokeObjectURL(url);
+                            showToast("💾 MP3 sparad!", "success");
+                          }
+                        } catch (error) {
+                          showToast("Kunde inte spara MP3", "error");
+                        }
+                      }}
+                      style={{ 
+                        background: "var(--accent-gold)", 
+                        color: "var(--bg-primary)",
+                        opacity: hasPremium ? 1 : 0.6
+                      }}
+                    >💾 Spara MP3 {!hasPremium && "🔒"}</button>
+                    
                     <button
                       className="button"
                       onClick={async () => {
@@ -1916,13 +1939,219 @@ export default function HomePage() {
                           a.click();
                           a.remove();
                           URL.revokeObjectURL(url);
-                        } catch {}
+                          showToast("🔄 Ny MP3 genererad och nedladdad!", "success");
+                        } catch (error) {
+                          showToast("Kunde inte generera ny MP3", "error");
+                        }
                       }}
-                    >Ladda ner ljudfil (MP3)</button>
+                    >🔄 Generera ny MP3</button>
                   </div>
                 </div>
               )}
             </div>
+            
+            {/* Sleep Mode Section */}
+            <div style={{ 
+              marginTop: "24px", 
+              padding: "20px", 
+              background: "rgba(255,255,255,0.03)", 
+              border: "1px solid rgba(255,255,255,0.08)", 
+              borderRadius: "16px" 
+            }}>
+              <h3 style={{ 
+                margin: "0 0 16px 0", 
+                fontSize: "16px", 
+                color: "var(--accent)",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px"
+              }}>
+                😴 Sleep Mode (efter sagan)
+                {(() => {
+                  // Check if user has Pro or Premium tier
+                  if (!hasPremium) return <span style={{ color: "var(--accent-gold)" }}>🔒</span>;
+                  
+                  const cookie = document.cookie || "";
+                  const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                  const tier = tierMatch ? tierMatch[1] : "basic";
+                  
+                  if (tier !== "pro" && tier !== "premium") {
+                    return <span style={{ color: "var(--accent-gold)" }}>🔒</span>;
+                  }
+                  return null;
+                })()}
+              </h3>
+              
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                <div>
+                  <label style={{ 
+                    display: "block", 
+                    fontSize: "14px", 
+                    marginBottom: "8px", 
+                    color: "var(--text-secondary)" 
+                  }}>
+                    Ljudtyp
+                  </label>
+                  <select 
+                    value={sleepChoice} 
+                    onChange={(e) => {
+                      // Check tier before allowing change
+                      if (!hasPremium) {
+                        setShowPaywall(true);
+                        return;
+                      }
+                      
+                      const cookie = document.cookie || "";
+                      const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                      const tier = tierMatch ? tierMatch[1] : "basic";
+                      
+                      if (tier !== "pro" && tier !== "premium") {
+                        setShowPaywall(true);
+                        return;
+                      }
+                      
+                      setSleepChoice(e.target.value);
+                    }}
+                    style={{ 
+                      width: "100%",
+                      padding: "10px 12px",
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: "8px",
+                      color: "var(--text-primary)",
+                      opacity: (() => {
+                        if (!hasPremium) return 0.6;
+                        const cookie = document.cookie || "";
+                        const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                        const tier = tierMatch ? tierMatch[1] : "basic";
+                        return (tier === "pro" || tier === "premium") ? 1 : 0.6;
+                      })()
+                    }}
+                  >
+                    <option value="white-noise">🌊 White noise</option>
+                    <option value="rain">🌧️ Regn</option>
+                    <option value="waves">🌊 Vågor</option>
+                    <option value="fireplace">🔥 Eldsprak</option>
+                    <option value="forest">🌲 Skogsnatt</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label style={{ 
+                    display: "block", 
+                    fontSize: "14px", 
+                    marginBottom: "8px", 
+                    color: "var(--text-secondary)" 
+                  }}>
+                    Sleep Timer
+                  </label>
+                  <select 
+                    value={sleepTimer} 
+                    onChange={(e) => {
+                      // Check tier before allowing change
+                      if (!hasPremium) {
+                        setShowPaywall(true);
+                        return;
+                      }
+                      
+                      const cookie = document.cookie || "";
+                      const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                      const tier = tierMatch ? tierMatch[1] : "basic";
+                      
+                      if (tier !== "pro" && tier !== "premium") {
+                        setShowPaywall(true);
+                        return;
+                      }
+                      
+                      setSleepTimer(Number(e.target.value));
+                    }}
+                    style={{ 
+                      width: "100%",
+                      padding: "10px 12px",
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: "8px",
+                      color: "var(--text-primary)",
+                      opacity: (() => {
+                        if (!hasPremium) return 0.6;
+                        const cookie = document.cookie || "";
+                        const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                        const tier = tierMatch ? tierMatch[1] : "basic";
+                        return (tier === "pro" || tier === "premium") ? 1 : 0.6;
+                      })()
+                    }}
+                  >
+                    <option value={0}>⏰ Av</option>
+                    <option value={10}>⏰ 10 min</option>
+                    <option value={20}>⏰ 20 min</option>
+                    <option value={30}>⏰ 30 min</option>
+                    <option value={45}>⏰ 45 min</option>
+                    <option value={60}>⏰ 60 min</option>
+                    <option value={90}>⏰ 90 min</option>
+                    <option value={120}>⏰ 120 min</option>
+                  </select>
+                  
+                  {sleepTimerActive && (
+                    <div style={{ 
+                      marginTop: "8px", 
+                      padding: "6px 10px", 
+                      background: "rgba(255,165,0,0.1)", 
+                      border: "1px solid rgba(255,165,0,0.3)", 
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                      color: "var(--accent-gold)",
+                      textAlign: "center"
+                    }}>
+                      ⏰ Timer aktiv: {sleepTimer} min
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div style={{ 
+                display: "flex", 
+                justifyContent: "space-between", 
+                alignItems: "center",
+                padding: "12px 16px",
+                background: "rgba(255,255,255,0.02)",
+                border: "1px solid rgba(255,255,255,0.05)",
+                borderRadius: "8px"
+              }}>
+                <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
+                  {(() => {
+                    if (!hasPremium) return "🔒 Pro/Premium-funktion";
+                    
+                    const cookie = document.cookie || "";
+                    const tierMatch = cookie.match(/premium_tier=([^;]+)/);
+                    const tier = tierMatch ? tierMatch[1] : "basic";
+                    
+                    if (tier !== "pro" && tier !== "premium") {
+                      return "🔒 Pro/Premium-funktion";
+                    }
+                    
+                    return `🎵 ${sleepChoice === "white-noise" ? "White noise" : 
+                            sleepChoice === "rain" ? "Regn" :
+                            sleepChoice === "waves" ? "Vågor" :
+                            sleepChoice === "fireplace" ? "Eldsprak" : "Skogsnatt"}${sleepTimer > 0 ? ` • ⏰ ${sleepTimer} min` : ""}`;
+                  })()}
+                </div>
+                
+                <button
+                  className="button"
+                  onClick={startSleepMode}
+                  disabled={playingSleep}
+                  style={{
+                    padding: "8px 16px",
+                    fontSize: "14px",
+                    background: playingSleep ? "var(--bg-secondary)" : "var(--accent)",
+                    opacity: playingSleep ? 0.6 : 1
+                  }}
+                >
+                  {playingSleep ? "🔊 Spelar..." : "▶️ Starta Sleep Mode"}
+                </button>
+              </div>
+            </div>
+            
             <hr />
             <div>
               <label>Bibliotek {history.length > 0 && <span className="small" style={{ color: "var(--text-secondary)" }}>({filteredHistory.length} av {history.length})</span>}</label>
@@ -2182,7 +2411,6 @@ export default function HomePage() {
                   <li>10 sagor per vecka</li>
                   <li>2 Magiska röster per vecka</li>
                   <li>Standardröst (Google TTS)</li>
-                  <li>Sleep-timer & white noise</li>
                 </ul>
                 <div className="modal-actions" style={{ justifyContent: "space-between" }}>
                   <button className="button" onClick={async () => {
@@ -2235,6 +2463,7 @@ export default function HomePage() {
                   <li>Obegränsade karaktärer</li>
                   <li>Sagoteman</li>
                   <li>📄 Export som PDF/TXT</li>
+                  <li>💾 Spara MP3-filer</li>
                   <li>🎵 Avancerade röstkontroller</li>
                 </ul>
                 <div className="modal-actions" style={{ justifyContent: "space-between" }}>
@@ -2287,6 +2516,7 @@ export default function HomePage() {
                   <li>Kapitel-serie (flera kapitel)</li>
                   <li>Familjeprofil</li>
                   <li>📄 Export som PDF/TXT</li>
+                  <li>💾 Spara MP3-filer</li>
                   <li>⏰ Sleep Timer</li>
                   <li>🎵 Avancerade röstkontroller</li>
                 </ul>
